@@ -1,0 +1,106 @@
+[data-theme="light"] {
+	/* Colores de los textos */
+	--z-color-foreground-primary: 250, 3%, 15%;
+	--z-color-foreground-secondary: 250, 4%, 35%;
+	--z-color-foreground-disabled: 250, 3%, 55%;
+
+	--z-color-foreground-accent: 250, 85%, 42%;
+	--z-color-foreground-info: 216, 98%, 44%;
+	--z-color-foreground-success: 104, 98%, 16%;
+	--z-color-foreground-warning: 40, 98%, 34%;
+	--z-color-foreground-danger: 4, 98%, 44%;
+
+	/* Colores de los fondos */
+	--z-color-background-primary: 250, 5%, 98%;
+	--z-color-background-secondary: 250, 7%, 96%;
+	--z-color-background-neutral: 250, 3%, 92%;
+	--z-color-background-disabled: 250, 3%, 88%;
+	--z-color-background-raised: 250, 7%, 100%;
+	--z-color-background-backdrop: 250, 0%, 4%, 0.5;
+
+	--z-color-background-accent: 250, 85%, 95%;
+	--z-color-background-accent-hover: 250, 85%, 90%;
+	--z-color-background-accent-inverted: 250, 85%, 50%;
+	--z-color-background-accent-inverted-hover: 250, 77%, 42%;
+	--z-color-background-info: 228, 98%, 95%;
+	--z-color-background-info-hover: 224, 98%, 90%;
+	--z-color-background-info-inverted: 216, 98%, 60%;
+	--z-color-background-info-inverted-hover: 216, 90%, 52%; 
+	--z-color-background-success: 116, 53%, 95%;
+	--z-color-background-success-hover: 112, 53%, 90%;
+	--z-color-background-success-inverted: 104, 98%, 32%;
+	--z-color-background-success-inverted-hover: 104, 90%, 24%;
+	--z-color-background-warning: 52, 98%, 90%;
+	--z-color-background-warning-hover: 48, 98%, 85%;
+	--z-color-background-warning-inverted: 40, 98%, 54%;
+	--z-color-background-warning-inverted-hover: 40, 90%, 46%;
+	--z-color-background-danger: 16, 98%, 95%;
+	--z-color-background-danger-hover: 12, 98%, 90%;
+	--z-color-background-danger-inverted: 4, 90%, 52%;
+	--z-color-background-danger-inverted-hover: 4, 90%, 48%;
+
+	/* Colores de los bordes */
+	--z-color-border-primary: 250, 3%, 88%;
+	--z-color-border-secondary: 250, 4%, 92%;
+	
+	--z-color-border-accent: 250, 85%, 46%;
+	--z-color-border-info: 216, 98%, 56%; 
+	--z-color-border-success: 104, 98%, 30%;
+	--z-color-border-warning: 40, 98%, 50%;
+	--z-color-border-danger: 4, 90%, 44%;
+}
+
+[data-theme="dark"] {
+	/* Colores de los textos */
+	--z-color-foreground-primary: 250, 3%, 92%;
+	--z-color-foreground-secondary: 250, 4%, 72%;
+	--z-color-foreground-disabled: 250, 3%, 52%;
+
+	--z-color-foreground-accent: 250, 85%, 84%;
+	--z-color-foreground-info: 216, 98%, 52%;
+	--z-color-foreground-success: 104, 98%, 24%;
+	--z-color-foreground-warning: 40, 98%, 44%;
+	--z-color-foreground-danger: 4, 98%, 52%;
+
+	/* Colores de los fondos */
+	--z-color-background-primary: 250, 5%, 8%;
+	--z-color-background-secondary: 250, 7%, 6%;
+	--z-color-background-neutral: 250, 3%, 16%;
+	--z-color-background-disabled: 250, 3%, 22%;
+	--z-color-background-raised: 250, 7%, 12%;
+	--z-color-background-backdrop: 250, 0%, 4%, 0.5;
+
+	--z-color-background-accent: 250, 85%, 50%, 10%;
+	--z-color-background-accent-hover: 250, 85%, 50%, 15%;
+	--z-color-background-accent-inverted: 250, 85%, 50%;
+	--z-color-background-accent-inverted-hover: 250, 77%, 42%;
+	--z-color-background-info: 216, 98%, 60%, 10%;
+	--z-color-background-info-hover: 216, 98%, 60%, 15%;
+	--z-color-background-info-inverted: 216, 98%, 60%;
+	--z-color-background-info-inverted-hover: 216, 90%, 52%; 
+	--z-color-background-success: 104, 98%, 32%, 10%;
+	--z-color-background-success-hover: 104, 98%, 32%, 15%;
+	--z-color-background-success-inverted: 104, 98%, 32%;
+	--z-color-background-success-inverted-hover: 104, 90%, 24%;
+	--z-color-background-warning: 40, 98%, 54%, 10%;
+	--z-color-background-warning-hover: 40, 98%, 54%, 15%;
+	--z-color-background-warning-inverted: 40, 98%, 54%;
+	--z-color-background-warning-inverted-hover: 40, 90%, 46%;
+	--z-color-background-danger: 4, 98%, 60%, 10%;
+	--z-color-background-danger-hover: 4, 98%, 60%, 15%;
+	--z-color-background-danger-inverted: 4, 90%, 52%;
+	--z-color-background-danger-inverted-hover: 4, 90%, 48%;
+
+	/* Colores de los bordes */
+	--z-color-border-primary: 250, 3%, 24%;
+	--z-color-border-secondary: 250, 4%, 20%;
+
+	--z-color-border-accent: 250, 85%, 46%;
+	--z-color-border-info: 216, 98%, 56%; 
+	--z-color-border-success: 104, 98%, 30%;
+	--z-color-border-warning: 40, 98%, 50%;
+	--z-color-border-danger: 4, 90%, 44%;
+
+	/* Fondo de la scrollbar [thumb track] */
+	scrollbar-color: #3b3b3f #252529;
+}

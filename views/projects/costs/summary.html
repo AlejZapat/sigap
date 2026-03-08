@@ -1,0 +1,302 @@
+<z-diagram id="project-evm">
+    <z-actionbar>
+        <actionbar-item>
+            <form-group aria-orientation="inline">
+                <group-set>
+                    <group-item>
+                        <label for="status-date">Fecha de estado</label>
+                        <input id="status-date" type="date">
+                    </group-item>
+                </group-set>
+            </form-group>
+        </actionbar-item>
+        <actionbar-item>
+            <form-group aria-orientation="inline">
+                <group-set>
+                    <group-item>
+                        <label for="time-scale">Escala de tiempo</label>
+                        <select id="time-scale"></select>
+                    </group-item>
+                </group-set>
+            </form-group>
+        </actionbar-item>
+    </z-actionbar>
+    <diagram-content>
+        <z-grid>
+            <grid-item class="col-2 col-lg-12">
+                <z-grid>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-pv">
+                                    <panel-suptitle title="Costo Presupuestado del Trabajo Programado">CPTP / PV</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle data-label="currency"></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-ev">
+                                    <panel-suptitle title="Costo Presupuestado del Trabajo Realizado">CPTR / EV</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle data-label="currency"></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-ac">
+                                    <panel-suptitle title="Costo Real del Trabajo Realizado">CRTR / AC</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle data-label="currency"></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                </z-grid>
+            </grid-item>
+            <grid-item class="col-8 col-lg-12">
+                <z-card>
+                    <card-title aria-label="title">
+                        <h6 class="m-0">Gestión del Valor Ganado</h6>
+                    </card-title>
+                    <card-content id="evm-curve" style="min-height: 323px;">
+                        <p>No hay datos para mostrar.</p>
+                    </card-content>
+                </z-card>
+            </grid-item>
+            <grid-item class="col-2 col-lg-12">
+                <z-grid>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-bac">
+                                    <panel-suptitle title="Costo a Finalización">CAF / BAC</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle data-label="currency"></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-spi">
+                                    <panel-suptitle title="Índice de Desempeño de la Programación">IDP / SPI</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-cpi">
+                                    <panel-suptitle title="Índice de Desempeño del Costo">IDC / CPI</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                </z-grid>
+            </grid-item>
+            <grid-item class="col-12">
+                <z-grid>
+                    <grid-item class="col-2 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-sv">
+                                    <panel-suptitle title="Variación de la Programación">VP / SV</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-2 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-cv">
+                                    <panel-suptitle title="Variación del Costo">VC / CV</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-2 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-tcpi">
+                                    <panel-suptitle title="Índice de Desempeño para Completar">IDPC / TCPI</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-2 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-eac">
+                                    <panel-suptitle title="Estimación a Finalización">EAF / EAC</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-2 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-etc">
+                                    <panel-suptitle title="Estimación para Completar">EPC / ETC</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-2 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-vac">
+                                    <panel-suptitle title="Variación a Finalización">VAF / VAC</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                </z-grid>
+            </grid-item>
+            <grid-item class="col-12">
+                <article class="pb-0">
+                    <h3 class="text-accent">Resumen Ejecutivo</h3>
+
+                    <div id="executive-summary">
+                        <p>No hay datos para mostrar.</p>
+                    </div>
+                </article>
+
+                <article class="pb-0">
+                    <h3 class="text-accent">Definiciones</h3>
+
+                    <h5 class="text-accent">Valores Base</h5>
+                    <dl>
+                        <dt>CPTP - Costo Presupuestado del Tabajo Planeado (PV - Planned Value)</dt>
+                        <dd>Representa el presupuesto autorizado asignado al trabajo planeado, que representa cuánto trabajo debería haberse completado según el plan. Es la línea base contra la cual se mide el progreso del cronograma.</dd>
+
+                        <dt>CPTR - Costo Presupuestado del Trabajo Real (EV - Earned Value)</dt>
+                        <dd>Representa el valor del trabajo realmente completado, que representa cuánto trabajo se ha realizado medido en términos presupuestarios. Es el indicador clave del progreso real del proyecto.</dd>
+
+                        <dt>CRTR - Costo Real del Trabajo Realizado (AC - Actual Cost)</dt>
+                        <dd>Representa el costo real incurrido por el trabajo realmente completado, que representa cuánto dinero se ha gastado realmente en el proyecto. Es el indicador clave del gasto real del proyecto.</dd>
+
+                        <dt>CAF - Costo a Finalización (BAC - Budget at Completion)</dt>
+                        <dd>Representa el presupuesto total planificado para completar el proyecto, que representa el costo total aprobado del proyecto. Es la línea base financiera contra la cual se miden todas las variaciones de costo.</dd>
+                    </dl>
+
+                    <h5 class="text-accent">Variaciones</h5>
+                    <dl>
+                        <dt>VP - Variación de la Programación (SV - Schedule Variance)</dt>
+                        <dd>Representa si el proyecto está adelantado o atrasado respecto al cronograma.</dd>
+
+                        <dt>VC - Variación del Costo (CV - Cost Variance)</dt>
+                        <dd>Representa si el proyecto está por debajo o por encima del presupuesto.</dd>
+                    </dl>
+
+                    <h5 class="text-accent">Índices de Desempeño</h5>
+                    <dl>
+                        <dt>IDP - Índice de Desempeño de la Programación (SPI - Schedule Performance Index)</dt>
+                        <dd>Representa la eficiencia con la que se está ejecutando el cronograma.</dd>
+
+                        <dt>IDC - Índice de Desempeño del Costo (CPI - Cost Performance Index)</dt>
+                        <dd>Representa la eficiencia con la que se está utilizando el presupuesto.</dd>
+
+                        <dt>IDPC - Índice de Desempeño para Completar (TCPI - To-Complete Performance Index)</dt>
+                        <dd>Representa qué tan eficiente debe ser el equipo con el presupuesto restante.</dd>
+                    </dl>
+
+                    <h5 class="text-accent">Proyecciones</h5>
+                    <dl>
+                        <dt>EAF - Estimación a Finalización (EAC - Estimate at Completion)</dt>
+                        <dd>Representa cuánto costará realmente el proyecto completo según el desempeño actual.</dd>
+
+                        <dt>EPC  - Estimación para Completar (ETC - Estimate to Complete)</dt>
+                        <dd>Representa cuánto dinero se necesita desde ahora hasta el final.</dd>
+
+                        <dt>VAF - Variación a Finalización (VAC - Variance at Completion)</dt>
+                        <dd>Representa el déficit o superávit esperado al finalizar el proyecto.</dd>
+                    </dl>
+                </article>
+            </grid-item>
+        </z-grid>
+    </diagram-content>
+</z-diagram>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const statusDate = document.querySelector('#status-date');
+        const currencies = document.querySelectorAll('[data-label="currency"]');
+
+        try {
+            const db = window.app?.db;
+
+            const tasks = await db.getByIndex('p_tasks', { key: 'projectId', value: project.id });
+
+            const status = await db.getAll('z-system_task_status');
+
+            if (tasks.length > 0 ) {
+                const charts = new window.app.Charts({
+                    project: { ...project, trackingBasisId: 2 }, // Fuerza a un análisis de costo (2)
+                    tasks: tasks,
+                    seriesMap: {
+                        planned: {
+                            index: 1,
+                            label: 'CPTP',
+                            color: '#0064ff'
+                        },
+                        earned: {
+                            index: 2,
+                            label: 'CPTR',
+                            color: '#64b464'
+                        },
+                        actual: {
+                            index: 3,
+                            label: 'CRTR',
+                            color: '#f05050'
+                        },
+                    },
+                    controls: {
+                        'status-date': new Date(),
+                        'time-scale': {
+                            days: 'Días',
+                            weeks: 'Semanas',
+                            months: 'Meses',
+                            quarters: 'Trimestres'
+                        }
+                    }
+                });
+                
+                charts.dashboardEVM('#project-evm'); 
+            }
+
+            statusDate.max = window.formatDateToISO(new Date(), 0, 'date');
+            currencies.forEach(e => {
+                e.textContent = project.currencyCode;
+            });
+
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

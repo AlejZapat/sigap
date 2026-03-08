@@ -1,0 +1,34 @@
+<z-diagram id="project-wbs" style="height: calc(100vh - 9.7rem); overflow: auto;"></z-diagram>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        
+        try {
+            const db = window.app?.db;
+
+            const tasks = await db.getByIndex('p_tasks', { key: 'projectId', value: project.id });
+            
+            const wbs = new window.app.Diagram('#project-wbs', {
+                project: project,
+                tasks: tasks,
+                nodeContent: {
+                    top: { 
+                        left: 'code', 
+                        right: 'progress' 
+                    },
+                    middle: 'name',
+                    bottom: { 
+                        left: 'work', 
+                        right: 'cost' 
+                    }
+                }
+            });
+
+            wbs.render('wbs');
+            
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

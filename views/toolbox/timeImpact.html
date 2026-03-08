@@ -1,0 +1,108 @@
+<h1>Impacto de Tiempo</h1>
+
+<z-drawer data-id="info" aria-orientation="right">
+    <panel-head>
+        <panel-title>Análisis de Impacto de Tiempo</panel-title>
+    </panel-head>
+    <panel-body>
+        <h2>¿Qué es?</h2>
+        <p>
+            El <strong>Time Impact Analysis (TIA)</strong> es una metodología estandarizada en la práctica recomendada "<abbr title="Association for the Advancement of Cost Engineering">AACE</abbr> 52R-06 Prospective Time Impact Analysis - As Applied in Construction" para analizar y cuantificar el impacto de eventos en el cronograma de un proyecto.
+        </p>
+        <p>
+            Esta técnica es ampliamente reconocida en la industria de la construcción y gestión de proyectos 
+            como el método más riguroso y defendible para demostrar cómo eventos específicos afectan 
+            la fecha de finalización del proyecto.
+        </p>
+        
+        <h2>¿Cómo funciona?</h2>
+        <p>
+            El principio fundamental del TIA es comparar el cronograma antes y después de un evento 
+            para determinar su impacto real. El proceso sigue estos pasos:
+        </p>
+        <ol>
+            <li><strong>Establecer la línea base:</strong> Se toma el cronograma actual como punto de referencia.</li>
+            <li><strong>Insertar el evento:</strong> Se modifica el cronograma para reflejar el evento (retraso, trabajo adicional o suspensión).</li>
+            <li><strong>Recalcular el cronograma:</strong> Se aplica el método de la ruta crítica (CPM) al cronograma modificado.</li>
+            <li><strong>Comparar resultados:</strong> Se comparan las fechas de finalización para cuantificar el impacto en días.</li>
+        </ol>
+        
+        <h2>¿Qué hace esta aplicación?</h2>
+        <p>
+            Esta herramienta implementa el algoritmo TIA permitiéndote analizar tres tipos de eventos:
+        </p>
+        <dl>
+            <dt><strong>Retraso de tarea</strong></dt>
+            <dd>
+                Aumenta la duración de una tarea existente. Útil para modelar situaciones donde 
+                una actividad toma más tiempo del planificado debido a problemas técnicos, 
+                condiciones climáticas adversas u otros factores.
+            </dd>
+            
+            <dt><strong>Tarea adicional</strong></dt>
+            <dd>
+                Inserta una nueva tarea en el cronograma después de una tarea existente. 
+                Aplica para trabajo correctivo, cambios de alcance o actividades no previstas 
+                que deben ejecutarse antes de continuar con las tareas sucesoras.
+            </dd>
+            
+            <dt><strong>Suspensión de tarea</strong></dt>
+            <dd>
+                Divide una tarea en dos partes con un período de suspensión en medio. 
+                Modela situaciones donde el trabajo debe detenerse temporalmente por 
+                espera de permisos, aprobaciones, materiales o resolución de conflictos.
+            </dd>
+        </dl>
+        
+        <h2>Resultados del análisis</h2>
+        <p>
+            Para cada evento analizado, la aplicación proporciona:
+        </p>
+        <ul>
+            <li>Comparación de fechas de finalización (línea base vs. impactada)</li>
+            <li>Impacto total en días del proyecto</li>
+            <li>Identificación de si el evento afecta la ruta crítica</li>
+            <li>Detalle de cambios en las holguras de todas las tareas afectadas</li>
+        </ul>
+        <p>
+            Esta información es esencial para la toma de decisiones, negociación de extensiones 
+            de plazo, análisis de reclamos y documentación de impactos durante la ejecución del proyecto.
+        </p>
+    </panel-body>
+</z-drawer>
+
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input id="xlsx-file" type="file" accept=".xlsx,.xls" data-icon="upload" />
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" data-drawer-target="info" data-icon="info" title="Información"></button>
+        </actionbar-item>
+    </z-actionbar>
+</z-container>
+
+<z-container id="time-impact-analysis"></z-container>
+
+<script>
+    const container = document.getElementById('time-impact-analysis');
+
+    (async function() {
+        try {
+            const sheetloader = new window.app.SheetLoader({ mode: 'project' });
+
+            sheetloader.render(document.getElementById('xlsx-file'), async (upload) => {
+                try {
+                    const analysis = new window.app.TimeImpact(container, {
+                        project: upload.project,
+                        tasks: upload.tasks
+                    });
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

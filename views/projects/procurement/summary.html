@@ -1,0 +1,52 @@
+<z-grid id="project-procurement">
+    <grid-item class="col-12">
+        <z-grid>
+            <grid-item class="col-6 col-lg-12">
+                <z-card>
+                    <card-title aria-label="title">
+                        <h6 class="m-0">Solicitudes por estado</h6>
+                    </card-title>
+                    <card-content id="requests-by-status" style="min-height: 323px;"></card-content>
+                </z-card>
+            </grid-item>
+            <grid-item class="col-6 col-lg-12">
+                <z-card>
+                    <card-title aria-label="title">
+                        <h6 class="m-0">Contratos por estado</h6>
+                    </card-title>
+                    <card-content id="contracts-by-status" style="min-height: 323px;"></card-content>
+                </z-card>
+            </grid-item>
+        </z-grid>
+    </grid-item>
+</z-grid>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const charts = new window.app.Charts({});
+        
+        try {
+            const db = window.app?.db;
+
+            const sourcing_requests = await db.getByIndex('p_sourcing_requests', { key: 'projectId', value: project.id });
+            const sourcing_requests_status = await db.getAll('z-system_sourcing_request_status');
+            charts.chart('donut', '#requests-by-status', countItemsByCategory(
+                sourcing_requests,
+                sourcing_requests_status,
+                { groupByProp: 'statusId', colorProp: 'badge' }
+            ));
+
+            const contracts = await db.getByIndex('p_contracts', { key: 'projectId', value: project.id });
+            const scontract_status = await db.getAll('z-system_contract_status');
+            charts.chart('donut', '#contracts-by-status', countItemsByCategory(
+                contracts,
+                scontract_status,
+                { groupByProp: 'statusId', colorProp: 'badge' }
+            ));
+
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

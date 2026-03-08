@@ -1,0 +1,25 @@
+<main-head>
+    <nav>
+        <nav-title aria-label="project-title"></nav-title>
+    </nav>
+    <nav aria-label="viewbar" data-type="horizontal"></nav>
+</main-head>
+
+<main-content aria-label="flap-container"></main-content>
+
+<script>
+    (async () => {
+        await window.loadProject();
+
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        
+        if (!project) {
+            window.dispatchEvent(new CustomEvent('page:ready'));
+            return;
+        }
+
+        await window.updateTasks(project);
+        
+        window.dispatchEvent(new CustomEvent('page:ready'));
+    })();
+</script>

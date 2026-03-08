@@ -1,0 +1,1 @@
+export class Runtime{constructor(i){this.config=i,this.modules=[]}use(i){this.modules.push(i)}init(){this.modules.forEach(i=>{"function"==typeof i.init&&i.init(this)})}get version(){return this.config.version}}

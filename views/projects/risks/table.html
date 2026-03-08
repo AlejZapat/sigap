@@ -1,0 +1,521 @@
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input aria-label="search" placeholder="Buscar" type="search">
+            <span aria-label="results"></span>
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" aria-label="new" data-icon="add" data-modal-target="new-risk">Agregar</button>
+        </actionbar-item>
+    </z-actionbar>
+    
+    <table class="table-sticky">
+        <thead>
+            <tr>
+                <th width="72">Código</th>
+                <th width="128">Tipo</th>
+                <th width="128">Categoría</th>
+                <th>Evento</th>
+                <th width="128">Estado</th>
+                <th width="108">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <dialog data-id="new-risk" style="height: 698px;">
+        <button aria-label="close"></button>
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-refresh="true">
+            <panel-head>
+                <panel-title>
+                    Nuevo Riesgo
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button type="submit">Crear</button>
+            </panel-foot>
+        </form>
+    </dialog>
+
+    <z-drawer data-id="edit-risk" aria-orientation="right">
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-auth="1">
+            <panel-head>
+                <panel-title>
+                    Editar Riesgo
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button type="submit">Actualizar</button>
+            </panel-foot>
+        </form>
+    </z-drawer>
+    
+</z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const zContainer = document.querySelector('z-container');
+        const zModalBody = zContainer.querySelector('dialog[data-id="new-risk"] panel-body');
+        const zDrawerBody = zContainer.querySelector('z-drawer[data-id="edit-risk"] panel-body');
+
+        try {
+            const db = window.app?.db;
+
+            const typesMap = Object.fromEntries(
+                (await db.getAll('z-system_risk_types')).map(r => [r.id, r.name])
+            );
+
+            const categoriesMap = Object.fromEntries(
+                (await db.getAll('z-app_risk_categories')).map(r => [r.id, r.name])
+            );
+
+            const statusMap = Object.fromEntries(
+                (await db.getAll('z-system_risk_status')).map(r => [r.id, `<z-badge data-type="${r.badge}">${r.name}</z-badge>`])
+            );
+
+            const impactMap = {
+                2: 'Bajo',
+                4: 'Medio',
+                8: 'Alto',
+                16: 'Muy Alto'
+            };
+
+            const tasksOptions = (await db.getByIndex('p_tasks', { key: 'projectId', value: project.id }))
+                .filter(r => r.typeId === 3)
+                .map(r => `<option value="${r.id}" ${r.progress === 100 ? 'disabled' : ''}>${r.name}</option>`)
+                .join('');
+
+            // Crear un Map para mapear taskId → taskName (incluye todas las tareas)
+            const tasksMap = new Map(
+                (await db.getByIndex('p_tasks', { key: 'projectId', value: project.id }))
+                    .filter(r => r.typeId === 3)
+                    .map(r => [r.id, r.name])
+            );
+
+            const tableName = 'p_risks';
+            const fields = ['code', 'typeId', 'categoryId', 'event', 'statusId'];
+
+            const risks = await db.getByIndex(tableName, { key: 'projectId', value: project.id });
+
+            await window.app.CRUD.read(zContainer, {
+                dataset: { 
+                    table: tableName,
+                    show: fields.join(',')
+                },
+                fields: fields,
+                data: risks,
+                mappers: {
+                    typeId: typesMap,
+                    categoryId: categoriesMap,
+                    statusId: statusMap
+                },
+                actions: {
+                    create: { auth: 1 },
+                    edit: { auth: 1, target: 'edit-risk' },
+                    delete: { auth: 1 }
+                },
+                onCreate: async (form, recordData) => {
+                    const factor = parseFloat(recordData.probability) / 100;
+
+                    recordData.projectId = project.id;
+                    recordData.tasks = [];
+                    recordData.financialSeverity = factor * Number(recordData.financialImpact);
+                    recordData.durationSeverity = Math.round(factor * Number(recordData.durationImpact));
+                    recordData.reputationalSeverity = factor * 4 * Number(recordData.reputationalImpact);
+                    recordData.peopleSeverity = factor * 4 * Number(recordData.peopleImpact);
+                    recordData.responseCost = 0;
+                    recordData.residualProbability = recordData.probability;
+                    recordData.residualFinancialImpact = recordData.financialImpact;
+                    recordData.residualFinancialSeverity = recordData.financialSeverity;
+                    recordData.residualDurationImpact = recordData.durationImpact;
+                    recordData.residualDurationSeverity = recordData.durationSeverity;
+                    recordData.residualReputationalImpact = recordData.reputationalImpact;
+                    recordData.residualReputationalSeverity = recordData.reputationalSeverity;
+                    recordData.residualPeopleImpact = recordData.peopleImpact;
+                    recordData.residualPeopleSeverity = recordData.peopleSeverity;
+                    recordData.statusId = 1;
+                },
+                onLoad: (form, record) => {
+
+                    /**
+                     * Asigna un valor a un input y dispara el evento `change`
+                     * IMPORTANTE:
+                     * - El CRUD NO detecta cambios solo por modificar `.value`
+                     * - El CRUD marca campos como "modificados" únicamente si recibe eventos
+                     * - Sin este evento, el valor NO se persiste en la base de datos
+                     */
+                    const set = (input, value) => {
+                        input.value = value;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    };
+
+                    /**
+                     * Calcula todas las severidades (normales y residuales)
+                     * y las escribe en inputs hidden.
+                     *
+                     * Nota:
+                     * - Estos campos NO son editados por el usuario
+                     * - Pero DEBEN existir como inputs con name
+                     * - Y DEBEN emitir `change` para que el CRUD los guarde
+                     */
+                    const calc = () => {
+                        const factor = parseFloat(form.probability.value) / 100;
+
+                        set(
+                            form.financialSeverity,
+                            factor * Number(form.financialImpact.value)
+                        );
+
+                        set(
+                            form.durationSeverity,
+                            Math.round(factor * Number(form.durationImpact.value))
+                        );
+
+                        set(
+                            form.reputationalSeverity,
+                            factor * 4 * Number(form.reputationalImpact.value)
+                        );
+
+                        set(
+                            form.peopleSeverity,
+                            factor * 4 * Number(form.peopleImpact.value)
+                        );
+
+                        const residualFactor = parseFloat(form.residualProbability.value) / 100;
+
+                        set(
+                            form.residualFinancialSeverity,
+                            residualFactor * Number(form.residualFinancialImpact.value)
+                        );
+
+                        set(
+                            form.residualDurationSeverity,
+                            Math.round(residualFactor * Number(form.residualDurationImpact.value))
+                        );
+
+                        set(
+                            form.residualReputationalSeverity,
+                            residualFactor * 4 * Number(form.residualReputationalImpact.value)
+                        );
+
+                        set(
+                            form.residualPeopleSeverity,
+                            residualFactor * 4 * Number(form.residualPeopleImpact.value)
+                        );
+                    };
+
+                    /**
+                     * Se recalcula cada vez que el usuario modifica
+                     * cualquiera de los campos base.
+                     *
+                     * Esto garantiza que:
+                     * - Las severidades siempre estén sincronizadas
+                     * - El último valor válido sea el que se persista
+                     */
+                    [
+                        'probability',
+                        'financialImpact',
+                        'durationImpact',
+                        'reputationalImpact',
+                        'peopleImpact',
+                        'residualProbability',
+                        'residualFinancialImpact',
+                        'residualDurationImpact',
+                        'residualReputationalImpact',
+                        'residualPeopleImpact'
+                    ].forEach(name => {
+                        form[name].addEventListener('input', calc);
+                        form[name].addEventListener('change', calc);
+                    });
+
+                    /**
+                     * Cálculo inicial:
+                     * - Necesario cuando se carga un registro existente
+                     * - Asegura coherencia incluso si el usuario no toca los campos
+                     */
+                    calc();
+                }
+            });
+            
+            /** 
+             * Formularios 
+             */
+
+            const formCommon = {
+                'general': [
+                    `<form-group>
+                        <label>Código</label>
+                        <input name="code" type="text" value="${setCode('R-', risks.length + 1)}" maxlength="8" style="width: 8rem;" readonly>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Clasificación</label>
+                        <group-set>
+                            <group-item>
+                                <label>Tipo</label>
+                                <select name="typeId">
+                                    ${window.buildOptions(typesMap, {default: 2})}
+                                </select>
+                            </group-item>
+                            <group-item>
+                                <label>Categoría</label>
+                                <select name="categoryId" required>
+                                    ${window.buildOptions(categoriesMap, {emptyOption: true})}
+                                </select>
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Causas</label>
+                        <textarea name="causes" rows="3" placeholder="Debido a un..." required></textarea>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Evento</label>
+                        <textarea name="event" rows="3" placeholder="Podría ocurrir un..." required></textarea>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Consecuencias</label>
+                        <textarea name="consequences" rows="3" placeholder="Que provocaría un..." required></textarea>
+                    </form-group>`
+                ],
+                'assessment': [
+                    `<form-group>
+                        <label>Medidas Actuales de Control <z-icon data-tooltip="Medidas tomadas para mitigar la probabilidad y/o el impacto de la ocurrencia">info</z-icon></label>
+                        <textarea name="currentControlMeasures" rows="5" required></textarea>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Probabilidad <z-icon data-tooltip="Número entre 0.1 y 99.9">info</z-icon></label>
+                        <group-set>
+                            <group-item>
+                                <input name="probability" type="number" min="0.1" max="99.9" step="0.1" required>
+                                %
+                            </group-item>
+                        </group-set>                        
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Financiero</label>
+                        <group-set>
+                            <group-item>
+                                <input name="financialImpact" type="number" min="0" max="999999999" required>
+                                ${project.currencyCode}
+                                <input type="hidden" name="financialSeverity" data-saveas="number">
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Duración</label>
+                        <group-set>
+                            <group-item>
+                                <input name="durationImpact" type="number" min="0" max="99999" required>
+                                días
+                                <input type="hidden" name="durationSeverity" data-saveas="number">
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Reputación</label>
+                        <select name="reputationalImpact" required>
+                            ${window.buildOptions(impactMap)}
+                        </select>
+                        <input type="hidden" name="reputationalSeverity" data-saveas="number">
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Personas</label>
+                        <select name="peopleImpact" required>
+                            ${window.buildOptions(impactMap)}
+                        </select>
+                        <input type="hidden" name="peopleSeverity" data-saveas="number">
+                    </form-group>`
+                ]
+            };
+
+            const formUpdate = {
+                'general': [
+                    `<form-group>
+                        <label>Estado</label>
+                        <select name="statusId">
+                            ${window.buildOptions(statusMap)}
+                        </select>
+                    </form-group>`
+                ],
+                'assessment': [
+                    `<form-group>
+                        <label>Descripción <z-icon data-tooltip="Supuestos y exclusiones que sirvieron como base para estimar la probabilidad y los impactos">info</z-icon></label>
+                        <textarea name="description" rows="8" required></textarea>
+                    </form-group>`,
+                ],
+                'treatment': [
+                    `<form-group>
+                        <label>Medidas de respuesta</label>
+                        <textarea name="responseMeasures" rows="5" required></textarea>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Costo de respuesta</label>
+                        <group-set>
+                            <group-item>
+                                <input name="responseCost" type="number" min="0" max="999999999999">
+                                ${project.currencyCode}
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Probabilidad residual</label>
+                        <group-set>
+                            <group-item>
+                                <input name="residualProbability" type="number" min="0.1" max="99.9" step="0.1" required>
+                                %
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Financiero residual</label>
+                        <group-set>
+                            <group-item>
+                                <input name="residualFinancialImpact" type="number" min="0" max="999999999" required>
+                                ${project.currencyCode}
+                                <input type="hidden" name="residualFinancialSeverity" data-saveas="number">
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Duración residual</label>
+                        <group-set>
+                            <group-item>
+                                <input name="residualDurationImpact" type="number" min="0" max="99999" required>
+                                días
+                                <input type="hidden" name="residualDurationSeverity" data-saveas="number">
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Reputación residual</label>
+                        <select name="residualReputationalImpact" required>
+                            ${window.buildOptions(impactMap)}
+                        </select>
+                        <input type="hidden" name="residualReputationalSeverity" data-saveas="number">
+                    </form-group>`,
+                    `<form-group>
+                        <label>Impacto Personas residual</label>
+                        <select name="residualPeopleImpact" required>
+                            ${window.buildOptions(impactMap)}
+                        </select>
+                        <input type="hidden" name="residualPeopleSeverity" data-saveas="number">
+                    </form-group>`
+                ]
+            };
+
+            zModalBody.innerHTML = `<z-tab>
+                <tab-head>
+                    <tab-head-item role="link" href="#n-general">General</tab-head-item>
+                    <tab-head-item role="link" href="#n-assessment">Valoración</tab-head-item>
+                </tab-head>
+                <tab-body>
+                    <tab-body-item id="n-general">
+                        ${formCommon['general'].join('')}
+                    </tab-body-item>
+                    <tab-body-item id="n-assessment">
+                        ${formCommon['assessment'].join('')}
+                    </tab-body-item>
+                </tab-body>
+            </z-tab>`;
+            
+            zDrawerBody.innerHTML = `<z-tab>
+                <tab-head>
+                    <tab-head-item role="link" href="#e-general">General</tab-head-item>
+                    <tab-head-item role="link" href="#e-assessment">Valoración</tab-head-item>
+                    <tab-head-item role="link" href="#e-treatment">Tratamiento</tab-head-item>
+                </tab-head>
+                <tab-body>
+                    <tab-body-item id="e-general">
+                        <fieldset>
+                            <legend>Identificación</legend>
+                            ${[...formCommon['general'], ...formUpdate['general']].join('')}
+                        </fieldset>
+                        <fieldset>
+                            <legend>Tareas afectadas</legend>
+                            <z-actionbar class="px-0">
+                                <actionbar-item>
+                                    <button type="button" class="borderless" data-icon="add_circle" id="btn-add-record">Agregar</button>
+                                </actionbar-item>
+                                <actionbar-item>
+                                    <button type="button" class="borderless" data-icon="check_circle" id="btn-accept-edit">Aceptar</button>
+                                    <button type="button" class="borderless" data-icon="cancel" id="btn-cancel-edit">Cancelar</button>
+                                </actionbar-item>
+                            </z-actionbar>
+                            <table class="table-sticky">
+                                <thead>
+                                    <tr>
+                                        <th>Tarea</th>
+                                        <th width="88"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="records-list"></tbody>
+                            </table>
+                            <input type="hidden" name="tasks" data-saveas="object" value="">
+                            <z-alert class="mt-md" data-type="warning" data-icon="true">
+                                <alert-content>
+                                    <alert-head>Atención!</alert-head>
+                                    <alert-body>
+                                        Recuerde <strong>Actualizar</strong> después de agragar, modificar o borrar algún registro.
+                                    </alert-body>
+                                </alert-content>
+                            </z-alert>
+                        </fieldset>
+                    </tab-body-item>
+                    <tab-body-item id="e-assessment">
+                        ${[...formCommon['assessment'], ...formUpdate['assessment']].join('')}
+                    </tab-body-item>
+                    <tab-body-item id="e-treatment">
+                        ${formUpdate['treatment'].join('')}
+                    </tab-body-item>
+                </tab-body>
+            </z-tab>`;
+
+            let recordsManager = null;
+            
+            zContainer.addEventListener('crud:update:load:complete', (event) => {
+                const { record } = event.detail;
+                
+                if (recordsManager) {
+                    recordsManager.destroy();
+                    recordsManager = null;
+                }
+                
+                recordsManager = new window.app.ArrayManager({
+                    fieldName: 'tasks',
+                    fields: [
+                        {
+                            name: 'taskId',
+                            type: 'select',
+                            saveAs: 'number',
+                            required: true,
+                            options: tasksOptions
+                        }
+                    ],
+                    formatters: {
+                        taskId: (value) => tasksMap.get(value) || value
+                    },
+                    onAdd: () => {
+                        // Obtener IDs ya seleccionados
+                        const selectedIds = recordsManager.getData().map(item => item.taskId);
+                        
+                        // Filtrar opciones disponibles
+                        const availableOptions = Array.from(tasksMap.entries())
+                            .filter(([id]) => !selectedIds.includes(id))
+                            .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                            .join('');
+                        
+                        // Actualizar las opciones del campo
+                        recordsManager.config.fields[0].options = availableOptions;
+                    }
+                });
+                
+                recordsManager.init(record.tasks || []);
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

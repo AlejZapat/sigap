@@ -1,0 +1,78 @@
+<z-container id="critical-path-drag-analysis"></z-container>
+
+<z-drawer data-id="info" aria-orientation="right">
+    <panel-head>
+        <panel-title>Análisis de Lastre del Camino Crítico</panel-title>
+    </panel-head>
+    <panel-body>
+        <h2>¿Qué es?</h2>
+
+        <p>
+        El Lastre del Camino Crítico (Critical Path Drag) es una métrica de gestión de proyectos que cuantifica cuánto tiempo añade cada actividad crítica a la duración total del proyecto.
+        </p>
+
+        <p>
+        Mientras que el Método del Camino Crítico (CPM) identifica qué tareas son críticas, el CPD responde a la pregunta: ¿Cuánto acortaríamos el proyecto si elimináramos o redujéramos esta tarea crítica?
+        </p>
+
+        <p>
+        El lastre de una tarea crítica es la cantidad de tiempo que esa tarea específica añade a la duración del proyecto. Es la diferencia entre la duración del proyecto con la tarea y sin ella.
+        </p>
+
+        <h2>¿Cómo funciona?</h2>
+
+        <p>El algoritmo para calcular el lastre de cada tarea crítica considera:</p>
+
+        <ul>
+            <li>Duración base: Inicialmente, el lastre máximo de una tarea es igual a su duración.</li>
+            <li>Sucesores: Se identifican las tareas que dependen directamente de la tarea analizada.</li>
+            <li>Caminos paralelos: Si un sucesor tiene múltiples predecesoras, se calcula el tiempo máximo de finalización de las otras predecesoras excluyendo la tarea analizada.</li>
+            <li>Limitación: El lastre está limitado por la diferencia entre el tiempo de finalización de la tarea y el tiempo máximo de las predecesoras paralelas.</li>
+        </ul>
+
+        <p>El cálculo considera todos los tipos de dependencias: Fin-Comienzo (FC), Comienzo-Comienzo (CC), Fin-Fin (FF) y Comienzo-Fin (CF), además de los lags entre tareas.</p>
+
+        <p>El lastre puede expresarse en tres dimensiones: Tiempo (días), Costo (proporcional al tiempo) y Trabajo (horas proporcionales al tiempo).</p>
+
+        <h2>¿Qué hace esta aplicación?</h2>
+
+        <ol data-type="decimal">
+            <li>Calcula automáticamente el CPM para identificar todas las tareas críticas del proyecto.</li>
+            <li>Analiza el lastre de cada tarea crítica considerando su duración, caminos paralelos, relaciones de dependencia y lags.</li>
+            <li>Visualiza en tabla todas las tareas con sus fechas, duración, lastre y porcentaje de lastre.</li>
+            <li>Genera métricas detalladas: total de tareas críticas, lastre total, promedio, máximo, mínimo y análisis de concentración.</li>
+            <li>Permite cambiar la base de cálculo entre tiempo, costo y trabajo para analizar el lastre desde diferentes perspectivas.</li>
+        </ol>
+
+        <h2>Resultados del análisis</h2>
+
+        <p>Lastre alto indica que la tarea es un cuello de botella significativo. Reducir su duración impactaría directamente en acortar el proyecto. Son candidatas prioritarias para asignación de recursos adicionales o fast-tracking.</p>
+
+        <p>Lastre bajo o cero en tareas críticas indica que están limitadas por tareas paralelas. Reducir su duración no acortaría el proyecto.</p>
+
+        <p>Un ratio de concentración bajo indica que pocas tareas tienen gran impacto, facilitando la optimización enfocada. Un ratio alto sugiere que el lastre está distribuido y requiere un enfoque más amplio.</p>
+    </panel-body>
+</z-drawer>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+
+        try {
+            const db = window.app?.db;
+
+            const tasks = await db.getByIndex('p_tasks', { key: 'projectId', value: project.id });
+
+            new window.app.CPD('#critical-path-drag-analysis', {
+                project: project,
+                tasks: tasks,
+                show: {
+                    info: true,
+                    currency: project.currencyCode
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

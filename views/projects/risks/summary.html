@@ -1,0 +1,206 @@
+<z-container id="project-risk-matrix"></z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+
+        try {
+            const db = window.app?.db;
+
+            const typesMap = Object.fromEntries(
+                (await db.getAll('z-system_risk_types')).map(r => [r.id, r.name])
+            );
+
+            const categoriesMap = Object.fromEntries(
+                (await db.getAll('z-app_risk_categories')).map(r => [r.id, r.name])
+            );
+
+            const statusMap = Object.fromEntries(
+                (await db.getAll('z-system_risk_status')).map(r => [r.id, r.name])
+            );
+
+            const risks = await db.getByIndex('p_risks', { key: 'projectId', value: project.id });
+            
+            const projectCost = Number(project.cost);
+            
+            new window.app.Matrix('#project-risk-matrix', {
+                data: risks,
+                mappers: {
+                    types: typesMap,
+                    categories: categoriesMap,
+                    status: statusMap
+                },
+                filters: [
+                    { id: 'typeId',     label: 'Tipo',      field: 'typeId',     mapper: 'types',      default: 2    },
+                    { id: 'categoryId', label: 'Categoría', field: 'categoryId', mapper: 'categories', default: null },
+                    { id: 'statusId',   label: 'Estado',    field: 'statusId',   mapper: 'status',     default: 1    }
+                ],
+                reverse: {
+                    when: { 
+                        typeId: 1 // Cuando currentTypeId === 1 (Oportunidades)
+                    },  
+                    axis: 'x' // Invertir eje X en TODAS las matrices
+                },
+                matrices: [
+                    {
+                        yAxis: {
+                            key: 'residualProbability',
+                            transform: (value) => value / 100,  // Convertir valor desde la base de datos a su equivalente "key" de data
+                            title: 'Probabilidad',
+                            data: {
+                                0.1: '10%', 
+                                0.2: '20%', 
+                                0.3: '30%', 
+                                0.4: '40%', 
+                                0.5: '50%', 
+                                0.6: '60%', 
+                                0.7: '70%', 
+                                0.8: '80%', 
+                                0.9: '90%', 
+                                1: '100%'
+                            }
+                        },
+                        xAxis: {
+                            key: 'residualFinancialImpact',
+                            title: 'Impacto Financiero',
+                            unit: project.currencyCode,
+                            data: 'auto',
+                            auto: {
+                                max: projectCost * 0.05,
+                                threshold: 0.5,
+                                key: 'raw',
+                                value: {
+                                    format: window.formatNumber,
+                                    config: { decimals: 1, notation: 'compact' }
+                                }
+                            },
+                        },
+                        severityKey: 'residualFinancialSeverity',
+                        scale: [
+                            {
+                                title: 'Muy Crítico',
+                                color: '#fff',
+                                background: '#ee4646',
+                                low: projectCost * 0.05,
+                                high: Infinity
+                            },
+                            {
+                                title: 'Crítico',
+                                color: '#000',
+                                background: '#ffc124',
+                                low: projectCost * 0.03,
+                                high: projectCost * 0.05
+                            },
+                            {
+                                title: 'Moderado',
+                                color: '#000',
+                                background: '#ffee46',
+                                low: projectCost * 0.015,
+                                high: projectCost * 0.03
+                            },
+                            {
+                                title: 'Leve',
+                                color: '#fff',
+                                background: '#59ab59',
+                                low: -Infinity,
+                                high: projectCost * 0.015
+                            }
+                        ],
+                        layout: {
+                            title: 'Nivel de Riesgo Financiero'
+                        }
+                    },
+                    {
+                        yAxis: {
+                            key: 'residualProbability',
+                            transform: (value) => value * 0.04,
+                            title: 'Probabilidad',
+                            data: {
+                                1: 'Baja', 
+                                2: 'Media', 
+                                3: 'Alta', 
+                                4: 'Muy Alta'
+                            }
+                        },
+                        xAxis: {
+                            key: 'residualReputationalImpact',
+                            title: 'Impacto Reputacional',
+                            data: {
+                                2: 'Bajo',
+                                4: 'Medio',
+                                8: 'Alto',
+                                16: 'Muy Alto'
+                            }
+                        },
+                        severityKey: 'residualReputationalSeverity' ,
+                        scale: window.app.REPUTATIONAL_SCALE,
+                        layout: {
+                            title: 'Nivel de Riesgo Reputación',
+                            cellSize: 84
+                        }
+                    },
+                    {
+                        yAxis: {
+                            key: 'residualProbability',
+                            transform: (value) => value * 0.04,
+                            title: 'Probabilidad',
+                            data: {
+                                1: 'Baja', 
+                                2: 'Media', 
+                                3: 'Alta', 
+                                4: 'Muy Alta'
+                            }
+                        },
+                        xAxis: {
+                            key: 'residualPeopleImpact',
+                            title: 'Impacto en las Personas',
+                            data: {
+                                2: 'Bajo',
+                                4: 'Medio',
+                                8: 'Alto',
+                                16: 'Muy Alto'
+                            }
+                        },
+                        scale: window.app.PEOPLE_SCALE,
+                        severityKey: 'residualPeopleSeverity',
+                        layout: {
+                            title: 'Nivel de Riesgo Personas',
+                            cellSize: 84
+                        }
+                    }
+                ],
+                modal: [
+                    { 
+                        label: 'Código', 
+                        tag: 'input',
+                        attributes: { 
+                            type: 'text',
+                            style: 'width: 8rem;'
+                        },
+                        field: 'code'
+                    },
+                    { 
+                        label: 'Causas', 
+                        tag: 'textarea',
+                        attributes: { rows: 3 },
+                        field: 'causes'
+                    },
+                    { 
+                        label: 'Evento', 
+                        tag: 'textarea',
+                        attributes: { rows: 3 },
+                        field: 'event'
+                    },
+                    { 
+                        label: 'Consecuencias', 
+                        tag: 'textarea',
+                        attributes: { rows: 3 },
+                        field: 'consequences'
+                    }
+                ]
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

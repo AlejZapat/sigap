@@ -1,0 +1,81 @@
+<h1>Sensibilidad</h1>
+
+<z-drawer data-id="info" aria-orientation="right">
+    <panel-head>
+        <panel-title>Análisis de Sensibilidad</panel-title>
+    </panel-head>
+    <panel-body>
+        <h2>¿Qué es?</h2>
+        <p>
+            El <strong>análisis de sensibilidad</strong> es una técnica que permite evaluar cómo cambia el resultado de un modelo cuando se modifican sus variables de entrada. Su objetivo es identificar <strong>qué variables tienen mayor impacto</strong> en el resultado final, y cómo ese impacto se manifiesta.
+        </p>
+
+        <h2>¿Por qué es importante?</h2>
+        <p>
+            En ingeniería y toma de decisiones, muchas veces no se conoce con exactitud el valor real de ciertos parámetros. El análisis de sensibilidad ayuda a entender <strong>qué tan sensibles</strong> son los resultados frente a cambios en esos parámetros, lo que permite enfocar esfuerzos en controlar o monitorear las variables más influyentes.
+        </p>
+
+        <h2>Tipos de análisis</h2>
+
+        <h3>Análisis Univariado</h3>
+        <p>
+            En el <strong>análisis univariado</strong>, se modifica una sola variable a la vez mientras se mantienen fijas las demás. Esto permite evaluar de forma directa el impacto individual de cada variable sobre el resultado del modelo.
+        </p>
+        <ul>
+            <li><strong>Ventaja:</strong> Fácil de interpretar.</li>
+            <li><strong>Limitación:</strong> No considera interacciones entre variables.</li>
+            <li><strong>Ejemplo:</strong> Evaluar cómo varía el costo total de un proyecto al cambiar solo el precio de un insumo.</li>
+        </ul>
+
+        <h3>Análisis Multivariado</h3>
+        <p>
+            En el <strong>análisis multivariado</strong>, se modifican varias variables al mismo tiempo, permitiendo evaluar <strong>interacciones y efectos combinados</strong>. Puede hacerse de forma sistemática (usando escenarios) o aleatoria (combinado con simulaciones como Monte Carlo).
+        </p>
+        <ul>
+            <li><strong>Ventaja:</strong> Refleja situaciones más realistas con múltiples incertidumbres.</li>
+            <li><strong>Limitación:</strong> Requiere más esfuerzo computacional e interpretación.</li>
+            <li><strong>Ejemplo:</strong> Evaluar cómo varía la duración de un proyecto al modificar simultáneamente la productividad del equipo y la disponibilidad de recursos.</li>
+        </ul>
+
+        <h2>Conclusión</h2>
+        <p>
+            El análisis de sensibilidad es una herramienta clave para <strong>priorizar variables críticas</strong>, entender los riesgos asociados a la incertidumbre y tomar decisiones mejor informadas. Tanto el enfoque univariado como el multivariado tienen valor según el contexto y el nivel de detalle requerido.
+        </p>
+    </panel-body>
+</z-drawer>
+
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input id="xlsx-file" type="file" accept=".xlsx,.xls" data-icon="upload" />
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" data-drawer-target="info" data-icon="info" title="Información"></button>
+        </actionbar-item>
+    </z-actionbar>
+</z-container>
+
+<z-diagram id="sensitivity-analysis"></z-diagram>
+
+<script>
+    const container = document.getElementById('sensitivity-analysis');
+
+    (async function() {
+        try {
+            const sheetloader = new window.app.SheetLoader({ mode: 'project' });
+
+            sheetloader.render(document.getElementById('xlsx-file'), async (upload) => {
+                try {
+                    const analysis = new window.app.Sensitivity(container, {
+                        project: upload.project,
+                        tasks: upload.tasks
+                    });
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

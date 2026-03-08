@@ -1,0 +1,20 @@
+<z-container id="project-gantt"></z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+
+        try {
+            const db = window.app?.db;
+
+            const tasks = await db.getByIndex('p_tasks', { key: 'projectId', value: project.id });
+
+            new window.app.Gantt('#project-gantt', {
+                project: project,
+                tasks: tasks
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

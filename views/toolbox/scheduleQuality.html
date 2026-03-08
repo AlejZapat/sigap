@@ -1,0 +1,240 @@
+<h1>Calidad del Cronograma</h1>
+
+<z-drawer data-id="info" aria-orientation="right">
+    <panel-head>
+        <panel-title>Análisis de Calidad del Cronograma</panel-title>
+    </panel-head>
+    <panel-body>
+        <h2>Principios</h2>
+        <p>Un cronograma de proyecto de alta calidad se caracteriza por ser completo, lógicamente secuenciado, realista en sus duraciones y recursos y controlable a lo largo del proyecto.</p>
+        <p>El cronograma del proyecto debe incluir el 100% del alcance del proyecto y utilizart estimaciones realistas tanto para las duraciones como para los recursos. Un cronograma confiable refleja el trabajo completo. Totas las tareas deben estar correctamente vinculadas con reacciones lógicas evitando dependencias atípicas, minimizando adelantos y retrasos para asegurar un camino crítico continuo. El cronograma debe tener una "linea base" para medir las variaciones y debe ser actualizado, como mínimo, semanalmente.</p>
+        <h2>Criterios</h2>
+        <h3>Lógica</h3>
+        <p>Todas las tareas deben estar vinculadas, al menos, con una predecesora y una sucesora. Las únicas excepciones posibles son la trea inicial (sin predecesora) y la tarea final (sin sucesora). Las tareas resumen no deberán tener ningún tipo de vinculación. Se recomienda que los hitos no formen parte de la lógica del proyecto, es decir, que tengan predecesora, pero no sucesora.</p>
+        <h3>Tipo de relación</h3>
+        <p>El tipo de relación "Fin-Comienzo" proporciona una secuencia lógica a través de la planificación y debe representar la mayoría de los tipos de enlace usados. El tipo de relación "Comienzo-Fin" es contraintuitivo ("el sucesor no puede terminar hasta que comience el predecesor") y solo debe usarse muy raramente y con justificación detallada. Las relaciones "Fin-Fin" y "Comienzo-Comienzo" sólo deben ser utilizadas cuando las tareas puedas ser realizadas en paralelo por equipos independientes.</p>
+        <h3>Posposición negativa</h3>
+        <p>Representa la cantidad de tiempo en que una tarea se debe adelantar con respecto a su predecesora. La posposición o desfase negativo podría afectar al camino crítico y a los análisis posteriores, distorsionan la holgura total y pueden causar conflictos de recursos.</p>
+        <h3>Posposición positiva</h3>
+        <p>Representa la cantidad de tiempo en que una tarea se debe retrasar con respecto a su predecesora. La posposición o desfase positivo marcan espacios de tiempo del proyecto que pueden estar "sin tarea".</p>
+        <h3>Posposición larga</h3>
+        <p>Debido a que el desfase marca espacios de tiempo del proyecto que pueden estar "sin tarea", este no debe sobrepasar los 56 días pues implica que el proyecto no tiene actividad en ese espacio. Se el proyecto debe esperar durante un tiempo prolongado (trámite, curado de concreto, etc.) Se debe indicar claramente como una tarea con duración.</p>
+        <h3>Tipo de restricción</h3>
+        <p>El tipo de restricción "Lo antes posible", permite que el cronograma se pueda adpatar facilmente a las modificaciones en las tareas por lo que muestra el efecto real de tal modificación.</p>
+        <h3>Fecha de restricción</h3>
+        <p>Limita las tareas con restricciones de fechas. Las restricciones duras (hard) pueden impedir que las tareas se desplacen en función de sus dependencias y por tanto rompe la lógica de la planificación:</p>
+        <ul>
+            <li>Comienzo o fin en ...</li>
+            <li>Comienzo en o después de ...</li>
+            <li>Fin en o antes de ...</li>
+        </ul>
+        <p>Las restricciones flexibles (soft) permiten que el programa se controle lógicamente.</p>
+        <ul>
+            <li>Lo antes posible</li>
+            <li>No iniciar o finalizar antes de ...</li>
+        </ul>
+        <h3>Fecha no válida</h3>
+        <p>Tareas que tienen una fecha de finalización anterior a la fecha de comienzo.</p>
+        <h3>Holgura negativa</h3>
+        <p>Se refiere a tareas con holgura inferior a 0 días. Ayuda a identificar tareas que retrasan la finalización de uno o más hitos. Las tareas con holgura negativa deben
+        tener una explicación y un plan de acción correctiva para mitigar el problema.</p>
+        <h3>Holgura larga</h3>
+        <p>Se debe limitar las tareas con holgura total de gran tamaño. Si las tareas tienen holgura total muy grande puede ser que no estén enlazadas correctamente, dando lugar a una red inestable.</p>
+        <h3>Duración larga</h3>
+        <p>Se refiere a las tareas con una duración de referencia manejable y que se inician dentro del período de planificación inmediato o "rolling wave". Ayuda a determinar si una tarea puede dividirse o no en dos o más tareas de forma que sean más manejables, proporcionando una mejor visión de la eficiencia en coste y tiempo.</p>
+        <h3>Duraciones Optimistas (O), Más probables (M) y Pesimistas (P)</h3>
+        <p>Se refiera a las tareas con una duración superior a 0 días, las cuales deberán tener una duración opmitista (O), más probable (M) y pesimista (P). La duración de la tarea deberá estar en algún punto entre O y P.</p>
+        <h3>Recursos</h3>
+        <p>Se debe verificar que todas las tareas con duraciones superiores a cero tienen asignados trabajo y costo generados a partir de los recursos.</p>
+        <h3>Prueba del Camino Crítico</h3>
+        <p>El propósito es probar la integridad de la lógica general de la red y, en particular, la ruta crítica. La fecha de finalización del proyecto o de un hito que forme parte de un camino crítico debe retrasarse o mostrar una holgura negativa igual a un retraso introducido a propósito en las tareas del camino crítico. Si no es así, existe un fallo en algún lugar de la red, debido a la falta de predecesores o sucesores en tareas que los necesitan.</p>
+    </panel-body>
+</z-drawer>
+
+<z-container id="schedule-quality-analysis">
+    <z-actionbar>
+        <actionbar-item>
+            <input id="xlsx-file" type="file" accept=".xlsx,.xls" data-icon="upload" />
+        </actionbar-item>
+        <actionbar-item>
+            <button id="print_results" class="borderless" type="button" data-icon="print" title="Imprimir" disabled></button>
+            <button class="borderless" type="button" data-drawer-target="info" data-icon="info" title="Información"></button>
+        </actionbar-item>
+    </z-actionbar>
+
+    <z-tab class="mt-0">
+        <tab-head>
+            <tab-head-item role="link" href="#quality">Calidad</tab-head-item>
+            <tab-head-item role="link" href="#timeline">Línea de tiempo</tab-head-item>
+            <tab-head-item role="link" href="#wbs">EDT</tab-head-item>
+        <tab-head-item>
+        </tab-head>
+        <tab-body>
+            <tab-body-item id="quality">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="48"></th>
+                            <th width="256">Criterio</th>
+                            <th>Descripción</th>
+                            <th width="112">Objetivo</th>
+                            <th width="96">Obtenido</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-type="rowtitle">1</td>
+                            <td>Lógica</td>
+                            <td>Las tareas deben estar vinculadas al menos con una predecesora y una sucesora.</td>
+                            <td class="p-0"><input name="logic_input" type="number" data-compare="gte" min="0" max="99" step="1" value="95"> %</td>
+                            <td id="logic" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">2</td>
+                            <td>Tipos de relación</td>
+                            <td>Las relaciones entre tareas deben ser preferentemente Fin-Comienzo.</td>
+                            <td class="p-0"><input name="relationship_types_input" type="number" data-compare="gte" min="0" max="99" step="1" value="90"> %</td>
+                            <td id="relationship_types" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">3</td>
+                            <td>Posposiciones negativas</td>
+                            <td>No deben existir relaciones con desfase negativo con respecto a su predecesora.</td>
+                            <td class="p-0"><input name="negative_lags_input" type="number" data-compare="lte" min="0" max="99" step="1" value="0"> %</td>
+                            <td id="negative_lags" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">4</td>
+                            <td>Posposiciones positivas</td>
+                            <td>Se deben limitar los relaciones con desfase positivo con respecto a su predecesora.</td>
+                            <td class="p-0"><input name="positive_lags_input" type="number" data-compare="lte" min="0" max="99" step="1" value="5"> %</td>
+                            <td id="positive_lags" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">5</td>
+                            <td>Posposiciones largas</td>
+                            <td>El desfase entre tareas vinculadas no debe sobrepasar los 56 días corridos.</td>
+                            <td class="p-0"><input name="long_lags_input" type="number" data-compare="lte" min="0" max="99" step="1" value="5"> %</td>
+                            <td id="long_lags" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">6</td>
+                            <td>Tipos de restricción</td>
+                            <td>Los tipos de restricción de las tareas deben ser preferentemente "Lo antes posible".</td>
+                            <td class="p-0"><input name="constraint_types_input" type="number" data-compare="gte" min="0" max="99" step="1" value="90"> %</td>
+                            <td id="constraint_types" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">7</td>
+                            <td>Fechas de restricción</td>
+                            <td>Se deben limitar las fechas que restringen el movimiento de las tareas.</td>
+                            <td class="p-0"><input name="hard_constraints_input" type="number" data-compare="lte" min="0" max="99" step="1" value="1"> %</td>
+                            <td id="hard_constraints" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">8</td>
+                            <td>Fechas no válidas</td>
+                            <td>No deben existir fechas fin anteriores a las fechas comienzo en las tareas.</td>
+                            <td class="p-0"><input name="invalid_dates_input" type="number" data-compare="lte" min="0" max="99" step="1" value="0"> %</td>
+                            <td id="invalid_dates" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">9</td>
+                            <td>Holguras negativas</td>
+                            <td>No deben existir tareas cuyas holguras totales sean menores a cero.</td>
+                            <td class="p-0"><input name="negative_floats_input" type="number" data-compare="lte" min="0" max="99" step="1" value="0"> %</td>
+                            <td id="negative_floats" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">10</td>
+                            <td>Holguras largas</td>
+                            <td>Se deben limitar las tareas cuyas holguras totales exceden los 56 días.</td>
+                            <td class="p-0"><input name="long_floats_input" type="number" data-compare="lte" min="0" max="99" step="1" value="5"> %</td>
+                            <td id="long_floats" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">11</td>
+                            <td>Duraciones largas</td>
+                            <td>Se deben limitar las tareas cuyas duraciones excedan los 56 días.</td>
+                            <td class="p-0"><input name="long_durations_input" type="number" data-compare="lte" min="0" max="99" step="1" value="5"> %</td>
+                            <td id="long_durations" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">12</td>
+                            <td>Duraciones O, M y P</td>
+                            <td>Las tareas deberán incluir duraciones optimistas (O), más probables (M) y pesimistas (P).</td>
+                            <td class="p-0"><input name="three_durations_input" type="number" data-compare="gte" min="0" max="99" step="1" value="95"> %</td>
+                            <td id="three_durations" class="text-right"></td>
+                        </tr>
+                        <tr>
+                            <td data-type="rowtitle">13</td>
+                            <td>Recursos</td>
+                            <td>Las tareas deberán incluir trabajo y costo.</td>
+                            <td class="p-0"><input name="resources_input" type="number" data-compare="gte" min="0" max="99" step="1" value="95"> %</td>
+                            <td id="resources" class="text-right"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <article id="details" class="my-lg">
+                    <!-- Informe -->
+                </article>
+
+            </tab-body-item>
+            <tab-body-item id="timeline">
+                <z-container id="project-gantt"></z-container>
+            </tab-body-item>
+            <tab-body-item id="wbs">
+                <z-diagram id="project-wbs" style="height: calc(100vh - 23.1rem); overflow: auto;"></z-diagram>
+            </tab-body-item>
+        <tab-body-item>
+        </tab-body>
+    </z-tab>
+
+</z-container>
+
+<script>
+    const container = document.getElementById('schedule-quality-analysis');
+
+    (async function() {
+        try {
+            const sheetloader = new window.app.SheetLoader({ mode: 'project' });
+
+            sheetloader.render(document.getElementById('xlsx-file'), async (upload) => {
+                try {
+                    new window.app.ScheduleQuality(container, {
+                        project: upload.project,
+                        tasks: upload.tasks
+                    });
+
+                    new window.app.Gantt('#project-gantt', {
+                        project: upload.project,
+                        tasks: upload.tasks
+                    });
+
+                    const wbs = new window.app.Diagram('#project-wbs', {
+                        project: upload.project,
+                        tasks: upload.tasks,
+                        nodeContent: {
+                            top: { 
+                                left: 'code', 
+                                right: 'progress' 
+                            },
+                            middle: 'name',
+                            bottom: { 
+                                left: 'work', 
+                                right: 'cost' 
+                            }
+                        }
+                    });
+                    wbs.render('wbs');
+
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

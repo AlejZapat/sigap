@@ -1,0 +1,357 @@
+<z-tab>
+    <tab-head>
+        <tab-head-item role="link" href="#project_charter">Acta de constitución</tab-head-item>
+        <tab-head-item role="link" href="#project_monthly">Mensual</tab-head-item>
+        <tab-head-item role="link" href="#project_weekly">Semanal</tab-head-item>
+    </tab-head>
+    <tab-body class="p-0">
+        <tab-body-item id="project_charter"></tab-body-item>
+        <tab-body-item id="project_monthly">
+
+        </tab-body-item>
+        <tab-body-item id="project_weekly">
+
+            <z-actionbar class="mt-lg">
+                <actionbar-item>
+                    <form-group aria-orientation="inline">
+                        <group-set>
+                            <group-item>
+                                <label for="start-date-report">Fecha de comienzo</label>
+                                <input id="start-date-report" type="date">
+                            </group-item>
+                            <group-item>
+                                <label for="finish-date-report">Fecha de fin</label>
+                                <input id="finish-date-report" type="date">
+                            </group-item>
+                            <group-item>
+                                <button id="update-report-btn" type="button">Actualizar informe</button>
+                            </group-item>
+                        </group-set>
+                    </form-group>
+                </actionbar-item>
+            </z-actionbar>
+
+            <section>
+                <!-- <h2 class="text-accent">Alcance</h2> -->
+                <!-- Tabla 1: Tareas completadas en el periodo -->
+                <h3 class="text-accent">Tareas completadas en el periodo</h3>
+                <table id="completed-tasks-table" class="mb-md">
+                    <thead>
+                        <tr>
+                            <th>Nombre de tarea</th>
+                            <th width="148">Completada</th>
+                            <th width="128">Crítica</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará dinámicamente -->
+                    </tbody>
+                </table>
+
+                <!-- Tabla 2: Tareas no completadas del periodo -->
+                <h3 class="text-accent">Tareas no completadas del periodo</h3>
+                <table id="not-completed-tasks-table" class="mb-md">
+                    <thead>
+                        <tr>
+                            <th>Nombre de tarea</th>
+                            <th width="148">Planificada</th>
+                            <th width="128">Avance</th>
+                            <th width="128">Crítica</th>
+                            <th width="128">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará dinámicamente -->
+                    </tbody>
+                </table>
+
+                <!-- Tabla 3: Tareas en progreso -->
+                <h3 class="text-accent">Tareas en progreso</h3>
+                <table id="in-progress-tasks-table" class="mb-md">
+                    <thead>
+                        <tr>
+                            <th>Nombre de tarea</th>
+                            <th width="128">Avance</th>
+                            <th width="128">Crítica</th>
+                            <th width="128">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará dinámicamente -->
+                    </tbody>
+                </table>
+
+                <!-- Tabla 4: Tareas a completar el siguiente periodo -->
+                <h3 class="text-accent">Tareas a completar el siguiente periodo</h3>
+                <table id="this-week-tasks-table" class="mb-md">
+                    <thead>
+                        <tr>
+                            <th>Nombre de tarea</th>
+                            <th width="148">Planificada</th>
+                            <th width="128">Crítica</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará dinámicamente -->
+                    </tbody>
+                </table>
+            </section>
+
+        </tab-body-item>
+    </tab-body>
+</z-tab>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const charter = document.querySelector('#project_charter');
+
+        const startDateInput = document.querySelector('#start-date-report');
+        const finishDateInput = document.querySelector('#finish-date-report');
+        const updateButton = document.querySelector('#update-report-btn');
+        const DATE_TEXT_CFG = {day: 'numeric', month: 'short', year: 'numeric'}
+
+        // Establecer fechas por defecto (semana anterior: lunes a domingo)
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+
+        const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const lastMonday = new Date(today);
+        lastMonday.setDate(today.getDate() - daysSinceMonday - 7);
+
+        const lastSunday = new Date(lastMonday);
+        lastSunday.setDate(lastMonday.getDate() + 6);
+
+        startDateInput.value = window.formatDateToISO(lastMonday, 0, 'date');
+        startDateInput.min = window.formatDateToISO(project.startDate, 0, 'date');
+        startDateInput.max = window.formatDateToISO(project.finishDate, 0, 'date');
+
+        finishDateInput.value = window.formatDateToISO(lastSunday, 0, 'date');
+        finishDateInput.min = window.formatDateToISO(project.startDate, 0, 'date');
+        finishDateInput.max = window.formatDateToISO(project.finishDate, 0, 'date');
+
+        try {
+            const db = window.app?.db;
+            
+            // Project Charter
+            const objectives = await db.getByIndex('p_objectives', { key: 'projectId', value: project.id });
+            const assumptions = await db.getByIndex('p_assumptions', { key: 'projectId', value: project.id });
+            const constraints = await db.getByIndex('p_constraints', { key: 'projectId', value: project.id });
+            const exclusions = await db.getByIndex('p_exclusions', { key: 'projectId', value: project.id });
+            const stakeholders = await db.getByIndex('p_stakeholders', { key: 'projectId', value: project.id });console.log(stakeholders);
+            const stakeholdersPowersMap = Object.fromEntries(
+                (await db.getAll('z-system_stakeholder_powers')).map(r => [r.id, r.name])
+            );
+            const stakeholdersInterestsMap = Object.fromEntries(
+                (await db.getAll('z-system_stakeholder_interests')).map(r => [r.id, r.name])
+            );
+            const risks = await db.getByIndex('p_risks', { key: 'projectId', value: project.id });
+
+            charter.appendChild(setArticle([
+                ['h2', 'Descripción del proyecto'],
+                ['p', project.description],
+                ['h2', 'Aspectos generales del proyecto'],
+                ['h3', 'Objetivos del proyecto'],
+                listOrMessage(objectives.map(r => `<strong>${r.name}:</strong> ${r.description}`)),
+                ['h3', 'Interesados del proyecto'],
+                listOrMessage(stakeholders.map(r => `<strong>${r.code}:</strong> ${r.name}, Poder ${stakeholdersPowersMap[r.powerId]} - Interés ${stakeholdersInterestsMap[r.interestId]}`)),
+                ['h3', 'Supuestos del proyecto'],
+                listOrMessage(assumptions.map(r => `<strong>${r.name}:</strong> ${r.description}`)),
+                ['h3', 'Restricciones del proyecto'],
+                listOrMessage(constraints.map(r => `<strong>${r.name}:</strong> ${r.description}`)),
+                ['h3', 'Exclusiones del proyecto'],
+                listOrMessage(exclusions.map(r => `<strong>${r.name}:</strong> ${r.description}`)),
+                ['h2', 'Alcance del proyecto'],
+                ['h3', 'Requisitos del proyecto'],
+                ['h3', 'Entregables del proyecto'],
+                ['h2', 'Cronograma del proyecto'],
+                ['h2', 'Presupuesto del proyecto'],
+                ['h2', 'Recursos del proyecto'],
+                ['h2', 'Riesgos del proyecto'],
+                listOrMessage(risks.map(r => `<strong>${r.code}:</strong> ${r.event}`)),
+            ], { autoNumber: true }));
+
+
+            // Monthly Report
+
+            // Weekly Report
+
+
+
+            // Cargar datos solo una vez al inicio
+            const tasks = await db.getByIndex('p_tasks', { key: 'projectId', value: project.id });
+            const statusMap = Object.fromEntries(
+                (await db.getAll('z-system_task_status')).map(r => [r.id, `<z-badge data-type="${r.badge}">${r.name}</z-badge>`])
+            );
+            const workTasks = tasks.filter(task => task.typeId === 3);
+
+            /**
+             * Genera el informe con las fechas actuales de los inputs
+             */
+            function generateReport() {
+                const startDate = startDateInput.value;
+                const finishDate = finishDateInput.value;
+
+                // Calcular siguiente periodo (lunes siguiente a finishDate + 7 días)
+                const finishDateObj = new Date(finishDate);
+                const dayOfWeekFinish = finishDateObj.getDay();
+                
+                // Calcular días hasta el siguiente lunes
+                const daysUntilMonday = dayOfWeekFinish === 0 ? 1 : 8 - dayOfWeekFinish;
+                const nextMonday = new Date(finishDateObj);
+                nextMonday.setDate(finishDateObj.getDate() + daysUntilMonday);
+                
+                const nextSunday = new Date(nextMonday);
+                nextSunday.setDate(nextMonday.getDate() + 6);
+
+                // Filtrar tareas para cada tabla
+                const completedTasks = filterCompletedTasks(workTasks, startDate, finishDate);
+                const notCompletedTasks = filterNotCompletedTasks(workTasks, startDate, finishDate);
+                const inProgressTasks = filterInProgressTasks(workTasks);
+                const nextPeriodTasks = filterThisWeekTasks(workTasks, nextMonday, nextSunday);
+
+                // Renderizar todas las tablas
+                renderTable('#completed-tasks-table tbody', completedTasks, [
+                    { field: 'name' },
+                    { field: 'actualFinishDate', format: (val) => window.formatDate(val, DATE_TEXT_CFG) },
+                    { field: 'totalSlack', format: (val) => val === 0 ? 'Sí' : 'No' }
+                ], 3);
+
+                renderTable('#not-completed-tasks-table tbody', notCompletedTasks, [
+                    { field: 'name' },
+                    { field: 'finishDate', format: (val) => window.formatDate(val, DATE_TEXT_CFG) },
+                    { field: 'progress', format: (val) => `${val}%` },
+                    { field: 'totalSlack', format: (val) => val === 0 ? 'Sí' : 'No' },
+                    { field: 'statusId', format: (val) => statusMap[val] || '' }
+                ], 5);
+
+                renderTable('#in-progress-tasks-table tbody', inProgressTasks, [
+                    { field: 'name' },
+                    { field: 'progress', format: (val) => `${val}%` },
+                    { field: 'totalSlack', format: (val) => val === 0 ? 'Sí' : 'No' },
+                    { field: 'statusId', format: (val) => statusMap[val] || '' }
+                ], 4);
+
+                renderTable('#this-week-tasks-table tbody', nextPeriodTasks, [
+                    { field: 'name' },
+                    { field: 'finishDate', format: (val) => window.formatDate(val, DATE_TEXT_CFG) },
+                    { field: 'totalSlack', format: (val) => val === 0 ? 'Sí' : 'No' }
+                ], 3);
+            }
+
+            // Generar informe inicial
+            generateReport();
+
+            // Configurar event listener del botón (solo una vez)
+            updateButton.addEventListener('click', generateReport);
+
+        } catch (error) {
+            console.error(error);
+        }
+
+        /**
+         * Genera nodo UL o mensaje vacío
+         * @param {Array<string>} items
+         * @param {string} [emptyMessage]
+         * @returns {[string, string|Array<string>]}
+         */
+        function listOrMessage(items, emptyMessage = 'No hay datos para mostrar') {
+
+            // validar lista
+            if (!Array.isArray(items) || items.length === 0) {
+                return ['p', emptyMessage];
+            }
+
+            return ['ul', items];
+        }
+
+        /**
+         * Renderiza una tabla genérica
+         * @param {string} selector - Selector del tbody
+         * @param {Array} tasks - Array de tareas filtrado
+         * @param {Array} columns - Configuración de columnas [{field, format}]
+         * @param {number} colspan - Número de columnas para mensaje vacío
+         */
+        function renderTable(selector, tasks, columns, colspan) {
+            const tbody = document.querySelector(selector);
+
+            if (tasks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align: center;">No hay registros para mostrar</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = tasks.map(task => {
+                const cells = columns.map(col => {
+                    const value = task[col.field];
+                    const formatted = col.format ? col.format(value, task) : value;
+                    return `<td>${formatted}</td>`;
+                }).join('');
+
+                return `<tr>${cells}</tr>`;
+            }).join('');
+        }
+
+        /**
+         * Filtra tareas completadas en el periodo
+         * @param {Array} tasks - Array de tareas
+         * @param {string} startDate - Fecha de inicio
+         * @param {string} finishDate - Fecha de fin
+         * @returns {Array}
+         */
+        function filterCompletedTasks(tasks, startDate, finishDate) {
+            return tasks.filter(task => {
+                if (task.progress !== 100 || !task.actualFinishDate) return false;
+                
+                const actualFinish = new Date(task.actualFinishDate);
+                const start = new Date(startDate);
+                const finish = new Date(finishDate);
+                
+                return actualFinish >= start && actualFinish <= finish;
+            });
+        }
+
+        /**
+         * Filtra tareas no completadas del periodo
+         * @param {Array} tasks - Array de tareas
+         * @param {string} startDate - Fecha de inicio
+         * @param {string} finishDate - Fecha de fin
+         * @returns {Array}
+         */
+        function filterNotCompletedTasks(tasks, startDate, finishDate) {
+            return tasks.filter(task => {
+                if (task.benchmark !== 100 || !task.finishDate) return false;
+                
+                const taskFinish = new Date(task.finishDate);
+                const start = new Date(startDate);
+                const finish = new Date(finishDate);
+                
+                return taskFinish >= start && taskFinish <= finish;
+            });
+        }
+
+        /**
+         * Filtra tareas en progreso
+         * @param {Array} tasks - Array de tareas
+         * @returns {Array}
+         */
+        function filterInProgressTasks(tasks) {
+            return tasks.filter(task => task.progress > 0 && task.progress < 100);
+        }
+
+        /**
+         * Filtra tareas a completar en un periodo de 7 días
+         * @param {Array} tasks - Array de tareas
+         * @param {Date} monday - Lunes del periodo
+         * @param {Date} sunday - Domingo del periodo
+         * @returns {Array}
+         */
+        function filterThisWeekTasks(tasks, monday, sunday) {
+            return tasks.filter(task => {
+                if (!task.finishDate) return false;
+                
+                const taskFinish = new Date(task.finishDate);
+                return taskFinish >= monday && taskFinish <= sunday;
+            });
+        }
+    })();
+</script>

@@ -1,0 +1,166 @@
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input aria-label="search" placeholder="Buscar" type="search">
+            <span aria-label="results"></span>
+        </actionbar-item>
+    </z-actionbar>
+
+    <table class="table-sticky">
+        <thead>
+            <tr>
+                <th width="72">Código</th>
+                <th>Nombre</th>
+                <th width="200">Estado</th>
+                <th width="108">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <z-drawer data-id="edit-contract" aria-orientation="right">
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-auth="1">
+            <panel-head>
+                <panel-title>
+                    Editar Contrato
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button type="submit">Guardar</button>
+            </panel-foot>
+        </form>
+    </z-drawer>
+
+</z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const zContainer = document.querySelector('z-container');
+        const zDrawerBody = zContainer.querySelector('z-drawer[data-id="edit-contract"] panel-body');
+
+        try {
+            const db = window.app?.db;
+
+            const typesMap = Object.fromEntries(
+                (await db.getAll('z-system_contract_types')).map(r => [r.id, r.name])
+            );
+
+            const incoterms = await db.getAll('z-system_incoterms');
+            const incotermsOptions = incoterms
+                .filter(r => r.isActive)
+                .map(r => `<option value="${r.id}">${r.code}-${r.name}</option>`)
+                .join('');
+
+            const statusMap = Object.fromEntries(
+                (await db.getAll('z-system_contract_status')).map(r => [r.id, `<z-badge data-type="${r.badge}">${r.name}</z-badge>`])
+            );
+
+            const tableName = 'p_contracts';
+            const fields = ['code', 'description', 'statusId'];
+
+            // Obtener los contratos del proyecto
+            const contracts = await db.getByIndex(tableName, { key: 'projectId', value: project.id });
+
+            // Leer y Mostrar la tabla
+            await window.app.CRUD.read(zContainer, {
+                dataset: { 
+                    table: tableName,
+                    show: fields.join(',')
+                },
+                fields: fields,
+                data: contracts,
+                mappers: {
+                    statusId: statusMap
+                },
+                actions: {
+                    create: { auth: 1 },
+                    edit: { auth: 1, target: 'edit-contract' },
+                    delete: { auth: 1 }
+                }
+            });
+
+            const formCommon = {
+                'general': [
+                    `<form-group>
+                        <label>Tipo</label>
+                        <select name="typeId" required>
+                            ${window.buildOptions(typesMap)}
+                        </select>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Código</label>
+                        <input name="code" type="text" maxlength="8" style="width: 8rem;" disabled>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Descripción</label>
+                        <textarea name="description" rows="3"required></textarea>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Precio Estimado</label>
+                        <group-set>
+                            <group-item>
+                                <input name="cost" type="number" min="0" max="999999999999" disabled>
+                                ${project.currencyCode}
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Fe. Esperada</label>
+                        <group-set>
+                            <group-item>
+                                <label>Comienzo</label>
+                                <input name="startDate" type="date" disabled>
+                            </group-item>
+                            <group-item>
+                                <label>Fin</label>
+                                <input name="finishDate" type="date" disabled>
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                    `<form-group>
+                        <label>Duración Esperada</label>
+                        <group-set>
+                            <group-item>
+                                <input name="duration" type="number" min="0" max="99999" disabled>
+                                días
+                            </group-item>
+                        </group-set>
+                    </form-group>`,
+                ],
+                'contract': []
+            };
+
+            const formUpdate = {
+                'general': [
+                    `<form-group>
+                        <label>Estado</label>
+                        <select name="statusId" disabled>
+                            ${window.buildOptions(statusMap)}
+                        </select>
+                    </form-group>`
+                ],
+                'contract': []
+            };
+
+            zDrawerBody.innerHTML = `<z-tab>
+                <tab-head>
+                    <tab-head-item role="link" href="#e-general">Licitación</tab-head-item>
+                    <tab-head-item role="link" href="#e-contract">Contrato</tab-head-item>
+                </tab-head>
+                <tab-body>
+                    <tab-body-item id="e-general">
+                        ${[...formCommon['general'], ...formUpdate['general']].join('')}
+                    </tab-body-item>
+                    <tab-body-item id="e-contract">
+                        ${[...formCommon['contract'], ...formUpdate['contract']].join('')}
+                    </tab-body-item>
+                </tab-body>
+            </z-tab>`;
+
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

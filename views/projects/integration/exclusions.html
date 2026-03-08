@@ -1,0 +1,110 @@
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input aria-label="search" placeholder="Buscar" type="search">
+            <span aria-label="results"></span>
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" aria-label="new" data-icon="add" data-modal-target="new-exclusion">Agregar</button>
+        </actionbar-item>
+    </z-actionbar>
+
+    <table class="table-sticky">
+        <thead>
+            <tr>
+                <th width="72">Código</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th width="108">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <dialog data-id="new-exclusion">
+        <button aria-label="close"></button>
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-refresh="true">
+            <panel-head>
+                <panel-title>
+                    Nueva Exclusión
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button type="submit">Crear</button>
+            </panel-foot>
+        </form>
+    </dialog>
+
+    <z-drawer data-id="edit-exclusion" aria-orientation="right">
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-auth="1">
+            <panel-head>
+                <panel-title>
+                    Editar Exclusión
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button type="submit">Actualizar</button>
+            </panel-foot>
+        </form>
+    </z-drawer>
+
+</z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const zContainer = document.querySelector('z-container');
+        const zModalBody = zContainer.querySelector('dialog[data-id="new-exclusion"] panel-body');
+        const zDrawerBody = zContainer.querySelector('z-drawer[data-id="edit-exclusion"] panel-body');
+
+        try {
+            const db = window.app?.db;
+
+            const tableName = 'p_exclusions';
+            const fields = ['code', 'name', 'description'];
+
+            const exclusions = await db.getByIndex(tableName, { key: 'projectId', value: project.id });
+
+            await window.app.CRUD.read(zContainer, {
+                dataset: { 
+                    table: tableName,
+                    show: fields.join(',')
+                },
+                fields: fields,
+                data: exclusions,
+                actions: {
+                    create: { auth: 1 },
+                    edit: { auth: 1, target: 'edit-exclusion' },
+                    delete: { auth: 1 }
+                },
+                onCreate: async (form, recordData) => {
+                    recordData.projectId = project.id;  
+                }
+            });
+
+            const formCommon = [
+                `<form-group>
+                    <label>Código</label>
+                    <input name="code" type="text" value="${setCode('E-', exclusions.length + 1)}" maxlength="8" style="width: 8rem;" readonly>
+                </form-group>`,
+                `<form-group>
+                    <label>Nombre</label>
+                    <input name="name" type="text" required>
+                </form-group>`,
+                `<form-group>
+                    <label>Descripción</label>
+                    <textarea name="description" rows="5"></textarea>
+                </form-group>`
+            ];
+
+            const formUpdate = [];
+
+            zModalBody.innerHTML = formCommon.join('');
+            zDrawerBody.innerHTML = [...formCommon, ...formUpdate].join('');
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

@@ -1,0 +1,412 @@
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input aria-label="search" placeholder="Buscar" type="search">
+            <span aria-label="results"></span>
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" aria-label="new" data-icon="add" data-modal-target="new-sourcing_request">Agregar</button>
+        </actionbar-item>
+    </z-actionbar>
+
+    <table class="table-sticky">
+        <thead>
+            <tr>
+                <th width="72">Código</th>
+                <th>Descripción</th>
+                <th width="160" style="text-align: right;">Presupuesto</th>
+                <th width="96" style="text-align: center;">Fe. Req.</th>
+                <th width="128">Estado</th>
+                <th width="108">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <dialog data-id="new-sourcing_request">
+        <button aria-label="close"></button>
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-refresh="true">
+            <panel-head>
+                <panel-title>
+                    Crear Solicitud
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button type="submit">Guardar</button>
+            </panel-foot>
+        </form>
+    </dialog>
+
+    <z-drawer data-id="edit-sourcing_request" aria-orientation="right">
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-auth="1">
+            <panel-head>
+                <panel-title>
+                    Editar Solicitud
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button id="contract" class="borderless" type="button" disabled>Contratar</button>
+                <button type="submit">Guardar</button>
+            </panel-foot>
+        </form>
+    </z-drawer>
+
+</z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const zContainer = document.querySelector('z-container');
+        const zModalBody = zContainer.querySelector('dialog[data-id="new-sourcing_request"] panel-body');
+        const zDrawer = zContainer.querySelector('z-drawer[data-id="edit-sourcing_request"]');
+        const zDrawerForm = zDrawer.querySelector('form');
+        const zDrawerBody = zDrawer.querySelector('panel-body');
+
+        try {
+            const db = window.app?.db;
+
+            const areas = await db.getAll('z-app_areas');
+            const areasMap = {};
+            const areasCodeMap = {};
+            for (const { id, name, code } of areas) {
+                areasMap[id] = name;
+                areasCodeMap[id] = code;
+            }
+
+            const typesMap = Object.fromEntries(
+                (await db.getAll('z-system_sourcing_request_types')).map(r => [r.id, r.name])
+            );
+
+            const currenciesMap = Object.fromEntries(
+                (await db.getAll('z-system_currencies')).map(r => [r.id, r.code])
+            );
+
+            const status = await db.getAll('z-system_sourcing_request_status');
+            const statusMap = Object.fromEntries(
+                status.map(r => [r.id, `<z-badge data-type="${r.badge}">${r.name}</z-badge>`])
+            );
+
+            const buyersMap = [
+                'Víctor Lazo',
+                'Víctor Ortíz',
+                'Mario Villagrán',
+                'Jair Madrid',
+                'Eduardo Arancibia'
+            ]
+
+            const tableName = 'p_sourcing_requests';
+            const fields = ['code', 'description', 'budget', 'dueAwardDate', 'statusId'];
+
+            // Obtener los contratos del proyecto
+            const sourcing_requests = await db.getByIndex(tableName, { key: 'projectId', value: project.id });
+
+            // Leer y Mostrar la tabla
+            await window.app.CRUD.read(zContainer, {
+                dataset: { 
+                    table: tableName,
+                    show: fields.join(',')
+                },
+                fields: fields,
+                data: sourcing_requests,
+                mappers: {
+                    statusId: statusMap
+                },
+                formatters: {
+                    budget: {
+                        format: window.formatNumber,
+                        align: 'right',
+                        suffix: project.currencyCode
+                    },
+                    dueAwardDate: { 
+                        format: window.formatDate, 
+                        align: 'center', 
+                        config: {
+                            year: '2-digit',
+                            month: '2-digit',
+                            day: '2-digit'
+                        } 
+                    },
+                },
+                actions: {
+                    create: { auth: 1 },
+                    edit: { auth: 1, target: 'edit-sourcing_request' },
+                    delete: { auth: 1 }
+                },
+                onCreate: async (form, recordData) => {
+                    recordData.projectId = project.id;
+                    recordData.buyer = null;
+                    recordData.statusId = 1;       
+                }
+            });
+
+            // Mapa temporal de estados para el select (sin "Contratado", sin badges)
+            const statusForSelect = Object.fromEntries(
+                status.filter(r => r.id !== 5).map(r => [r.id, r.name])
+            );
+
+            const formCommon = [
+                `<form-group>
+                    <label>Área</label>
+                    <select name="areaId" required>
+                        ${window.buildOptions(areasMap, {emptyOption: true})}
+                    </select>
+                </form-group>`,
+                `<form-group>
+                    <label>Código</label>
+                    <input name="code" type="text" maxlength="8" style="width: 8rem;" readonly>
+                </form-group>`,
+                `<form-group>
+                    <label>Tipo</label>
+                    <select name="typeId" required>
+                        ${window.buildOptions(typesMap, {default: 2})}
+                    </select>
+                </form-group>`,
+                `<form-group>
+                    <label>Descripción</label>
+                    <textarea name="description" rows="3"required></textarea>
+                </form-group>`,
+                `<form-group>
+                    <label>Presupuesto</label>
+                    <group-set>
+                        <group-item>
+                            <input name="budget" type="number" min="0" max="999999999999" required>
+                            ${project.currencyCode}
+                        </group-item>
+                    </group-set>
+                </form-group>`,
+                `<form-group>
+                    <label>Fecha Requerimiento</label>
+                    <input name="dueAwardDate" type="date" required>
+                </form-group>`,
+            ];
+
+            const formUpdate = [
+                `<form-group>
+                    <label>Comprador</label>
+                    <datalist id="dl_buyers">
+                        ${window.buildOptions(buyersMap, {mode: 'datalist'})}
+                    </datalist>
+                    <input name="buyer" type="text" list="dl_buyers" maxlength="128">
+                </form-group>`,
+                `<form-group>
+                    <label>Precio Adjudicación</label>
+                    <group-set>
+                        <group-item>
+                            <input name="awardCost" type="number" min="0" max="999999999999" required>
+                            ${project.currencyCode}
+                        </group-item>
+                    </group-set>
+                </form-group>`,
+                `<form-group>
+                    <label>Fecha Adjudicación</label>
+                    <input name="awardDate" type="date">
+                </form-group>`,
+                `<form-group>
+                    <label>Plazo Adjudicación</label>
+                    <group-set>
+                        <group-item>
+                            <input name="awardDuration" type="number" min="0" max="99999">
+                            días
+                        </group-item>
+                    </group-set>
+                </form-group>`,
+                `<form-group>
+                    <label>Estado</label>
+                    <select name="statusId">
+                        ${window.buildOptions(statusForSelect)}
+                    </select>
+                </form-group>`
+            ];
+
+            zModalBody.innerHTML = formCommon.join('');
+            zDrawerBody.innerHTML = `
+                <fieldset>
+                    <legend>Requerimiento</legend>
+                    ${formCommon.join('')}
+                </fieldset>
+                <fieldset>
+                    <legend>Proceso</legend>
+                    ${formUpdate.join('')}
+                </fieldset>`;
+
+            // Asigna el código del requerimiento basado en el areaId
+            document.querySelector('[name="areaId"]').addEventListener('change', e => {
+                document.querySelector('input[name="code"]').value = window.setCode({ selector: '[name="areaId"]', map: areasCodeMap }, sourcing_requests.length + 1 );
+            });
+
+            /**
+             * Valida y controla el estado de campos y botones en un formulario según un campo controlador
+             * @param {HTMLElement} form - Elemento form
+             * @param {Object} config - Configuración
+             */
+            function validateForm(form, config) {
+                const controller = form.querySelector(config.controller);
+                const button = form.querySelector(config.enable.button);
+                
+                // Cachear campos una sola vez
+                if (!config._cachedFields) {
+                    const fieldSelectors = Array.isArray(config.fields) ? config.fields : [config.fields];
+                    config._cachedFields = fieldSelectors.map(selector => form.querySelector(selector));
+                }
+                
+                const fields = config._cachedFields;
+
+                // Deshabilitar/habilitar campos según el valor del controller
+                const shouldDisable = controller.value !== config.enable.value;
+                fields.forEach(field => {
+                    field.disabled = shouldDisable;
+                    // Si se deshabilitan, limpiar valores
+                    if (shouldDisable) {
+                        field.value = '';
+                    }
+                });
+
+                // Validar si el botón debe estar habilitado
+                const allFieldsValid = fields.every(field => !field.disabled && field.value);
+                const controllerValid = controller.value === config.enable.value;
+                button.disabled = !(allFieldsValid && controllerValid);
+            }
+
+            /**
+             * Deshabilita el select de estado si ya está contratado
+             * @param {HTMLElement} form - Elemento form
+             * @param {Object} record - Registro actual
+             */
+            function handleContractedStatus(form, record) {
+                const selectStatus = form.querySelector('[name="statusId"]');
+                
+                // PASO 1: Limpiar estado anterior (siempre)
+                selectStatus.disabled = false; // Habilitar por defecto
+                
+                // Remover opción "Contratado" si existe
+                const existingOption = selectStatus.querySelector('option[value="5"]');
+                if (existingOption) {
+                    existingOption.remove();
+                }
+                
+                // PASO 2: Aplicar lógica solo si está contratado
+                if (record.statusId === 5) {
+                    // Agregar opción "Contratado" al select
+                    const contractedStatus = status.find(s => s.id === 5);
+                    const option = document.createElement('option');
+                    option.value = '5';
+                    option.textContent = contractedStatus.name;
+                    selectStatus.appendChild(option);
+                    
+                    // Seleccionar y deshabilitar
+                    selectStatus.value = '5';
+                    selectStatus.disabled = true;
+                }
+            }
+
+            // Configuración para validación del formulario
+            const formConfig = {
+                controller: '[name="statusId"]',
+                fields: ['[name="awardCost"]', '[name="awardDate"]', '[name="awardDuration"]'],
+                enable: {
+                    value: '4',
+                    button: '#contract'
+                }
+            };
+
+            // Escuchar cuando el CRUD termine de cargar los datos en el formulario
+            zContainer.addEventListener('crud:update:load:complete', (event) => {
+                if (event.detail.form.closest('z-drawer[data-id="edit-sourcing_request"]') === zDrawer) {
+                    const form = event.detail.form;
+                    
+                    // Limpiar caché de campos para el formulario clonado
+                    delete formConfig._cachedFields;
+                    
+                    // Validación inicial
+                    handleContractedStatus(form, event.detail.record);
+                    validateForm(form, formConfig);
+                    
+                    // Re-aplicar event listeners al formulario clonado para validación en tiempo real
+                    form.querySelector('[name="awardCost"]').addEventListener('input', () => validateForm(form, formConfig));
+                    form.querySelector('[name="awardDate"]').addEventListener('change', () => validateForm(form, formConfig));
+                    form.querySelector('[name="awardDuration"]').addEventListener('change', () => validateForm(form, formConfig));
+                    form.querySelector('[name="statusId"]').addEventListener('change', () => validateForm(form, formConfig));
+                    
+                    // Event listener para el botón de contratar
+                    form.querySelector('#contract').addEventListener('click', async () => {
+                        const submitButton = form.querySelector('#contract');
+                        const selectStatus = form.querySelector('[name="statusId"]');
+                        
+                        if (!confirm('¿Está seguro de que desea generar el contrato?')) {
+                            return;
+                        }
+                        
+                        submitButton.classList.add('loading');
+                        submitButton.disabled = true;
+                        
+                        try {
+                            // Obtener ID del registro desde el evento
+                            const recordId = event.detail.recordId;
+                            const currentRequest = await db.get(tableName, recordId);
+                            
+                            // Actualizar solicitud a estado "Contratado"
+                            currentRequest.statusId = 5;
+                            await db.update(tableName, currentRequest);
+                            
+                            // Crear nuevo contrato
+                            await db.add('p_contracts', {
+                                projectId: currentRequest.projectId,
+                                typeId: 1,
+                                code: currentRequest.code,
+                                description: currentRequest.description,
+                                supplier: null,
+                                supplierRepresentative: null,
+                                representative: null,
+                                startDate: currentRequest.awardDate,
+                                finishDate: window.addDays(currentRequest.awardDate, currentRequest.awardDuration),
+                                duration: currentRequest.awardDuration,
+                                work: null,
+                                cost: currentRequest.awardCost,
+                                actualStartDate: null,
+                                actualFinishDate: null,
+                                actualDuration: null,
+                                actualWork: null,
+                                actualCost: null,
+                                currencyId: project.currencyId,
+                                statusId: 1
+                            });
+                            
+                            // Actualizar UI
+                            selectStatus.value = '5';
+                            handleContractedStatus(form, currentRequest);
+                            
+                            // Actualizar celda en tabla
+                            const row = document.querySelector(`tr[data-row="${recordId}"]`);
+                            const statusCell = row?.querySelector('td[data-column="statusId"]');
+                            if (statusCell) {
+                                statusCell.innerHTML = statusMap[5];
+                            }
+                            
+                            window.Toast({
+                                message: 'Contrato creado exitosamente',
+                                type: 'success'
+                            });
+                            
+                        } catch (error) {
+                            console.error(error);
+
+                            window.Toast({
+                                message: 'Error al crear el contrato',
+                                type: 'danger'
+                            });
+                            submitButton.disabled = false; // Solo habilitar si falla
+                            
+                        } finally {
+                            submitButton.classList.remove('loading');
+                        }
+                    });
+                }
+            });
+
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

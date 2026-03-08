@@ -1,0 +1,90 @@
+<main-head>
+    <nav>
+        <nav-title aria-label="project-title"></nav-title>
+    </nav>
+    <nav aria-label="viewbar" data-type="horizontal"></nav>
+</main-head>
+
+<main-content aria-label="flap-container"></main-content>
+
+<script>
+    (async () => {
+        await window.loadProject();
+
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        
+        if (!project) {
+            window.dispatchEvent(new CustomEvent('page:ready'));
+            return;
+        }
+
+        const REPUTATIONAL_SCALE = [
+            {
+                title: 'Muy Crítico',
+                color: '#fff',
+                background: '#ee4646',
+                low: 32,
+                high: Infinity
+            },
+            {
+                title: 'Crítico',
+                color: '#000',
+                background: '#ffc124',
+                low: 16,
+                high: 32
+            },
+            {
+                title: 'Moderado',
+                color: '#000',
+                background: '#ffee46',
+                low: 8,
+                high: 16
+            },
+            {
+                title: 'Leve',
+                color: '#fff',
+                background: '#59ab59',
+                low: -Infinity,
+                high: 8
+            }
+        ];
+
+        const PEOPLE_SCALE = [
+            {
+                title: 'Muy Crítico',
+                color: '#fff',
+                background: '#ee4646',
+                low: 32,
+                high: Infinity
+            },
+            {
+                title: 'Crítico',
+                color: '#000',
+                background: '#ffc124',
+                low: 16,
+                high: 32
+            },
+            {
+                title: 'Moderado',
+                color: '#000',
+                background: '#ffee46',
+                low: 8,
+                high: 16
+            },
+            {
+                title: 'Leve',
+                color: '#fff',
+                background: '#59ab59',
+                low: -Infinity,
+                high: 8
+            }
+        ];
+
+        window.app.REPUTATIONAL_SCALE = REPUTATIONAL_SCALE;
+        window.app.PEOPLE_SCALE = PEOPLE_SCALE;
+        
+        await window.updateTasks(project);
+
+        window.dispatchEvent(new CustomEvent('page:ready'));
+    })();
+</script>

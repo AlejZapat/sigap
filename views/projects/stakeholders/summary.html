@@ -1,0 +1,106 @@
+<z-container id="project-stakeholder-matrix"></z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+
+        try {
+            const db = window.app?.db;
+
+            const typesMap = Object.fromEntries(
+                (await db.getAll('z-system_stakeholder_types')).map(r => [r.id, r.name])
+            );
+
+            const rolesMap = Object.fromEntries(
+                (await db.getAll('z-system_stakeholder_roles')).map(r => [r.id, r.name])
+            );
+
+            const powersMap = Object.fromEntries(
+                (await db.getAll('z-system_stakeholder_powers')).map(r => [r.id, r.name])
+            );
+
+            const interestsMap = Object.fromEntries(
+                (await db.getAll('z-system_stakeholder_interests')).map(r => [r.id, r.name])
+            );
+
+            const statusMap = Object.fromEntries(
+                (await db.getAll('z-system_stakeholder_status')).map(r => [r.id, r.name])
+            );
+
+            const stakeholders = await db.getByIndex('p_stakeholders', { key: 'projectId', value: project.id });
+
+            new window.app.Matrix('#project-stakeholder-matrix', {
+                data: stakeholders,
+                mappers: {
+                    types:     typesMap,
+                    roles:     rolesMap,
+                    powers:    powersMap,
+                    interests: interestsMap,
+                    status:    statusMap
+                },
+                filters: [
+                    { id: 'typeId', label: 'Tipo', field: 'typeId', mapper: 'types', default: null },
+                    { id: 'statusId', label: 'Estado', field: 'statusId', mapper: 'status', default: null }
+                ],
+                matrices: [
+                    {
+                        yAxis: {
+                            key: 'powerId',
+                            title: 'Poder',
+                            data: powersMap
+                        },
+                        xAxis: {
+                            key: 'interestId',
+                            title: 'Interés',
+                            data: interestsMap
+                        },
+                        quadrants: {
+                            xMid: 3,
+                            yMid: 3,
+                            items: [
+                                { x: 'high', y: 'high', title: 'Gestionar de cerca',  background: '#ee464680', color: '#fff' },
+                                { x: 'low',  y: 'high', title: 'Mantener satisfecho', background: '#ffc12480', color: '#000' },
+                                { x: 'high', y: 'low',  title: 'Mantener informado',  background: '#ffee4680', color: '#000' },
+                                { x: 'low',  y: 'low',  title: 'Monitorear',          background: '#59ab5980', color: '#fff' }
+                            ]
+                        },
+                        relevant: [
+                            { label: 'Código',   field: 'code'    },
+                            { label: 'Rol', field: 'roleId', mapper: 'roles' }, 
+                            { label: 'Nombre',   field: 'name'    }
+                        ],
+                        layout: {
+                            title: 'Matriz Poder / Interés',
+                            cellSize: 120
+                        }
+                    }
+                ],
+                modal: [
+                    {
+                        label: 'Código',
+                        tag: 'input',
+                        attributes: {
+                            type: 'text',
+                            style: 'width: 8rem;'
+                        },
+                        field: 'code'
+                    },
+                    {
+                        label: 'Nombre',
+                        tag: 'input',
+                        attributes: { type: 'text' },
+                        field: 'name'
+                    },
+                    {
+                        label: 'Contacto',
+                        tag: 'textarea',
+                        attributes: { rows: 3 },
+                        field: 'contact'
+                    }
+                ]
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

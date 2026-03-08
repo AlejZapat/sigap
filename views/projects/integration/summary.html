@@ -1,0 +1,212 @@
+<z-diagram id="project-summary">
+
+    <z-actionbar>
+        <actionbar-item>
+            <form-group aria-orientation="inline">
+                <group-set>
+                    <group-item>
+                        <label for="status-date">Fecha de estado</label>
+                        <input id="status-date" type="date">
+                    </group-item>
+                    <group-item>
+                        <label for="show-ranges">Rangos</label>
+                        <input id="show-ranges" type="checkbox" role="switch">
+                    </group-item>
+                </group-set>
+            </form-group>
+        </actionbar-item>
+        <actionbar-item>
+            <form-group aria-orientation="inline">
+                <group-set>
+                    <group-item>
+                        <label for="tracking-basis-id">Base Cálculo</label>
+                        <select id="tracking-basis-id"></select>
+                    </group-item>
+                    <group-item>
+                        <label for="time-scale">Escala de tiempo</label>
+                        <select id="time-scale"></select>
+                    </group-item>
+                </group-set>
+            </form-group>
+            <button class="outlined" aria-label="backup-project" data-icon="cloud_download" title="Respaldar proyecto"></button>
+        </actionbar-item>
+    </z-actionbar>
+
+    <diagram-content>
+        <z-grid>
+            <grid-item class="col-2 col-lg-12">
+                <z-grid>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="performance-index">
+                                    <panel-suptitle>Desempleño</panel-suptitle>
+                                    <panel-title>0%</panel-title>
+                                    <panel-subtitle>Real/Línea Base</panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-duration">
+                                    <panel-suptitle>Duración Línea Base</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle>días</panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-cost">
+                                    <panel-suptitle>Costo Línea Base</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle data-label="currency"></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-work">
+                                    <panel-suptitle>Trabajo Línea Base</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle>horas</panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-tasks">
+                                    <panel-suptitle>Tareas</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-milestones">
+                                    <panel-suptitle>Hitos</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                </z-grid>
+            </grid-item>
+            <grid-item class="col-10 col-lg-12">
+                <z-grid>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Curva de Avance</h6>
+                            </card-title>
+                            <card-content id="progress-curve" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Avance por Periodo</h6>
+                            </card-title>
+                            <card-content id="progress-by-period" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Tareas por estado</h6>
+                            </card-title>
+                            <card-content id="tasks-by-status" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Análisis de Tendencia de Hitos (MTA)</h6>
+                            </card-title>
+                            <card-content id="mta" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                </z-grid>
+            </grid-item>
+        </z-grid>
+    </diagram-content>
+</z-diagram>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const statusDate = document.querySelector('#status-date');
+        const currencies = document.querySelectorAll('[data-label="currency"]');
+        const backupBtn = document.querySelector('[aria-label="backup-project"]');
+        
+        try {
+            const db = window.app?.db;
+
+            const tasks = await db.getByIndex('p_tasks', { key: 'projectId', value: project.id });
+            const milestones = await db.getByIndex('p_milestones', { key: 'projectId', value: project.id });
+
+            const status = await db.getAll('z-system_task_status');
+
+            if (tasks.length > 0 ) {
+                const charts = new window.app.Charts({
+                    project: project,
+                    tasks: tasks,
+                    milestones: milestones,
+                    controls: {
+                        'status-date': new Date(),
+                        'show-ranges': false,
+                        'tracking-basis-id': {
+                            1: 'Tiempo',
+                            2: 'Costo',
+                            3: 'Trabajo'
+                        },
+                        'time-scale': {
+                            days: 'Días',
+                            weeks: 'Semanas',
+                            months: 'Meses',
+                            quarters: 'Trimestres'
+                        }
+                    },
+                    mappers: {
+                        status: status
+                    }
+                });
+                
+                charts.dashboardSummary('#project-summary'); 
+            }
+
+            statusDate.max = window.formatDateToISO(new Date(), 0, 'date');
+            currencies.forEach(e => {
+                e.textContent = project.currencyCode;
+            });
+
+            backupBtn.dataset.id = project.id;
+            
+            // Configurar event listener del botón de backup
+            if (window.app.CRUD?.backupInstance) {
+                window.app.CRUD.backupInstance.init();
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

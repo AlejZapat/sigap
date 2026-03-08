@@ -1,0 +1,67 @@
+<h1>Monte Carlo</h1>
+
+<z-drawer data-id="info" aria-orientation="right">
+    <panel-head>
+        <panel-title>Análisis de Monte Carlo</panel-title>
+    </panel-head>
+    <panel-body>
+        <h2>¿Qué es?</h2>
+        <p>
+            El <strong>análisis de Monte Carlo</strong> es una técnica estadística que permite estimar posibles resultados de un proceso o sistema cuando existen variables inciertas. En lugar de calcular un solo resultado determinista, esta técnica simula <strong>miles o millones de escenarios</strong> posibles mediante la generación aleatoria de valores dentro de rangos definidos para las variables clave.
+        </p>
+
+        <h2>¿Cómo funciona?</h2>
+        <p>
+            Se parte de un modelo matemático o lógico del sistema a estudiar. Luego, se identifican las variables que tienen incertidumbre (por ejemplo: tiempos, costos, demanda). A cada una se le asigna una <strong>distribución de probabilidad</strong> (normal, uniforme, triangular, etc.). El análisis consiste en ejecutar múltiples simulaciones, donde cada vez se toman valores aleatorios según esas distribuciones y se calcula el resultado del modelo.
+        </p>
+
+        <h2>Ventajas del Análisis de Monte Carlo</h2>
+        <ul>
+            <li><strong>Incorpora la incertidumbre:</strong> Permite considerar múltiples fuentes de variabilidad en lugar de usar valores fijos.</li>
+            <li><strong>Resultados probabilísticos:</strong> En lugar de un único resultado, entrega un rango de posibles resultados junto con su probabilidad.</li>
+            <li><strong>Identifica riesgos:</strong> Ayuda a visualizar la probabilidad de escenarios críticos o no deseados.</li>
+            <li><strong>Facilita la toma de decisiones:</strong> Proporciona información más completa para evaluar opciones bajo incertidumbre.</li>
+            <li><strong>Flexible y adaptable:</strong> Se puede aplicar en ingeniería, finanzas, gestión de proyectos, energía, manufactura, etc.</li>
+        </ul>
+
+        <p>
+            En resumen, el análisis de Monte Carlo es una herramienta poderosa para ingenieros que enfrentan problemas con incertidumbre y buscan tomar decisiones fundamentadas basadas en datos y probabilidades.
+        </p>
+    </panel-body>
+</z-drawer>
+
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input id="xlsx-file" type="file" accept=".xlsx,.xls" data-icon="upload" />
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" data-drawer-target="info" data-icon="info" title="Información"></button>
+        </actionbar-item>
+    </z-actionbar>
+</z-container>
+
+<z-diagram id="montecarlo-analysis"></z-diagram>
+
+<script>
+    const container = document.getElementById('montecarlo-analysis');
+
+    (async function() {
+        try {
+            const sheetloader = new window.app.SheetLoader({ mode: 'project' });
+
+            sheetloader.render(document.getElementById('xlsx-file'), async (upload) => {
+                try {
+                    const analysis = new window.app.MonteCarlo(container, {
+                        project: upload.project,
+                        tasks: upload.tasks
+                    });
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

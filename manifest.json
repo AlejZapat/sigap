@@ -1,0 +1,63 @@
+{
+    "name": "SIGAP",
+    "short_name": "SIGAP",
+    "version": "1.0.0",
+    "description": "Sistema Integrado de Gestión Ágil de Proyectos",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#3300ff",
+    "orientation": "portrait-primary",
+    "scope": "./",
+    "lang": "es",
+    "categories": ["productivity", "business"],
+    "icons": [
+        {
+            "src": "./assets/brand/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "./assets/brand/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "./assets/brand/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "./assets/brand/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "./assets/brand/icon-maskable-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "./assets/brand/desktop-home.png",
+            "sizes": "1920x1080",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Vista de escritorio de la aplicación"
+        },
+        {
+            "src": "./assets/brand/mobile-home.png",
+            "sizes": "720x1600",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Vista móvil de la aplicación"
+        }
+    ]
+}
+

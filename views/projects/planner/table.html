@@ -1,0 +1,636 @@
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input aria-label="search" placeholder="Buscar" type="search">
+            <span aria-label="results"></span>
+        </actionbar-item>
+        <actionbar-item>
+            <input id="xlsx-file" type="file" accept=".xlsx,.xls" data-icon="upload" />
+        </actionbar-item>
+    </z-actionbar>
+
+    <table class="table-sticky" aria-label="layout-fixed">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th width="128">Avance</th>
+                <th width="112" style="text-align: right;">Duración</th>
+                <th width="128" style="text-align: right;">Trabajo</th>
+                <th width="160" style="text-align: right;">Costo</th>
+                <th width="129">Estado</th>
+                <th width="108">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <z-drawer data-id="edit-task" aria-orientation="right">
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-auth="1">
+            <panel-head>
+                <panel-title>
+                    Editar Tarea
+                </panel-title>
+            </panel-head>
+            <panel-body></panel-body>
+            <panel-foot>
+                <button type="submit">Actualizar</button>
+            </panel-foot>
+        </form>
+    </z-drawer>
+
+</z-container>
+
+<script>
+    (async function() {
+        const project = JSON.parse(sessionStorage.getItem('project'));
+        const zContainer = document.querySelector('z-container');
+        const zDrawerBody = zContainer.querySelector('z-drawer[data-id="edit-task"] panel-body');
+        const utcOffset = window.getUTCOffset();
+        
+        try {
+            const db = window.app?.db;
+
+            const typesMap = Object.fromEntries(
+                (await db.getAll('z-system_task_types')).map(r => [r.id, r.name])
+            );
+
+            const distributionsOptions = Object.entries(window.app.TASK_DISTRIBUTIONS_MAP)
+                .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                .join('');
+
+            const statusMap = Object.fromEntries(
+                (await db.getAll('z-system_task_status')).map(r => [r.id, `<z-badge data-type="${r.badge}">${r.name}</z-badge>`])
+            );
+
+            const tableName = 'p_tasks';
+            const fields = ['name', 'progress', 'duration', 'work', 'cost', 'statusId'];
+
+            const tasks = await db.getByIndex(tableName, { key: 'projectId', value: project.id });
+            const tasksMap = new Map(tasks.filter(task => task.typeId === 3).map(task => [task.id, task.name])); // Crear el Map reutilizando los datos
+            
+            const relationsMap = new Map(
+                (await db.getAll('z-system_task_relations')).map(r => [r.id, r.code])
+            );
+            
+            await window.app.CRUD.read(zContainer, {
+                dataset: { 
+                    table: tableName,
+                    show: fields.join(',')
+                },
+                fields: fields,
+                data: tasks,
+                rowAttributes: { 
+                    'data-row': 'id', 
+                    'data-type': 'typeId',
+                    'data-status': 'statusId'
+                },
+                hierarchy: 'name',
+                mappers: {
+                    statusId: statusMap
+                },
+                formatters: {
+                    duration: {
+                        format: window.formatNumber,
+                        align: 'right',
+                        suffix: 'días'
+                    },
+                    work: {
+                        format: window.formatNumber,
+                        align: 'right',
+                        suffix: 'horas'
+                    },
+                    cost: {
+                        format: window.formatNumber,
+                        align: 'right',
+                        suffix: project.currencyCode
+                    }
+                },
+                actions: {
+                    create: { auth: 0 },
+                    edit: { auth: 1, target: 'edit-task', exclude: { typeId: 1 } },
+                    delete: { auth: 1, exclude: { typeId: 1 } }
+                },
+                onLoad: (form, record) => {
+                    const progressField = form.querySelector('[name="progress"]');
+                    if (!progressField) return;
+
+                    // Controlador de ciclo de vida
+                    const abortController = new AbortController();
+                    const { signal } = abortController;
+
+                    const drawer = form.closest('z-drawer');
+                    if (drawer) {
+                        drawer.addEventListener('drawer:close', () => {
+                            abortController.abort();
+                        }, { once: true });
+                    }
+
+                    // Campos del formulario
+                    const actualStartDateField = form.querySelector('[name="actualStartDate"]');
+                    const actualFinishDateField = form.querySelector('[name="actualFinishDate"]');
+                    const actualDurationField = form.querySelector('[name="actualDuration"]');
+                    const actualWorkField = form.querySelector('[name="actualWork"]');
+                    const actualCostField = form.querySelector('[name="actualCost"]');
+
+                    // Instancia de lectura
+                    const readInstance = window.app.CRUD._readInstances.get(zContainer);
+                    if (!readInstance) return;
+
+                    const taskIndex = readInstance.config.data.findIndex(t => t.id === record.id);
+                    if (taskIndex === -1) return;
+
+                    /**
+                     * Recalcula campos usando updateFieldsByProgress y actualiza formulario
+                     */
+                    const recalcAndUpdateForm = (updatedFields) => {
+                        // Actualizar registro temporal
+                        const temp = { ...readInstance.config.data[taskIndex], ...updatedFields };
+                        
+                        // Aplicar cálculos de progreso
+                        window.updateFieldsByProgress(temp);
+                        
+                        // Actualizar memoria
+                        Object.assign(readInstance.config.data[taskIndex], temp);
+
+                        // Actualizar formulario con valores calculados
+                        const dateFields = ['actualStartDate', 'actualFinishDate', 'startDate', 'finishDate'];
+                        const numericFields = ['actualDuration', 'actualWork', 'actualCost', 'duration', 'work', 'cost'];
+
+                        dateFields.forEach(field => {
+                            const input = form.querySelector(`[name="${field}"]`);
+                            if (input && temp[field]) {
+                                input.value = window.formatDateToISO(temp[field], -utcOffset, 'datetime');
+                            } else if (input) {
+                                input.value = '';
+                            }
+                        });
+
+                        numericFields.forEach(field => {
+                            const input = form.querySelector(`[name="${field}"]`);
+                            if (input) {
+                                input.value = temp[field] || 0;
+                            }
+                        });
+                    };
+
+                    // Listener para progress
+                    progressField.addEventListener('change', () => {
+                        const progress = parseFloat(progressField.value ?? 0);
+                        if (progress < 0 || progress > 100) return;
+
+                        // Caso especial: progress = 0, limpiar campos reales
+                        if (progress === 0) {
+                            recalcAndUpdateForm({ progress });
+                            return;
+                        }
+
+                        recalcAndUpdateForm({ progress });
+                    }, { signal });
+
+                    // Listener para actualStartDate cuando progress=100
+                    if (actualStartDateField) {
+                        actualStartDateField.addEventListener('change', () => {
+                            const progress = parseFloat(progressField.value ?? 0);
+                            if (progress !== 100) return;
+
+                            recalcAndUpdateForm({
+                                actualStartDate: actualStartDateField.value 
+                                    ? new Date(actualStartDateField.value) 
+                                    : null
+                            });
+                        }, { signal });
+                    }
+
+                    // Listener para actualFinishDate cuando progress=100
+                    if (actualFinishDateField) {
+                        actualFinishDateField.addEventListener('change', () => {
+                            const progress = parseFloat(progressField.value ?? 0);
+                            if (progress !== 100) return;
+
+                            recalcAndUpdateForm({
+                                actualFinishDate: actualFinishDateField.value 
+                                    ? new Date(actualFinishDateField.value) 
+                                    : null
+                            });
+                        }, { signal });
+                    }
+
+                    // Listener para actualDuration cuando progress=100
+                    if (actualDurationField) {
+                        actualDurationField.addEventListener('change', () => {
+                            const progress = parseFloat(progressField.value ?? 0);
+                            if (progress !== 100) return;
+
+                            recalcAndUpdateForm({
+                                actualDuration: parseFloat(actualDurationField.value ?? 0),
+                                actualWork: parseFloat(actualWorkField?.value ?? 0),
+                                actualCost: parseFloat(actualCostField?.value ?? 0)
+                            });
+                        }, { signal });
+                    }
+                },
+                onUpdate: (form, fullRecord, changedFields) => {
+                    const fieldsChanged = changedFields.some(({ fieldName }) => 
+                        ['progress', 'actualStartDate', 'actualFinishDate', 'actualDuration', 'actualWork', 'actualCost'].includes(fieldName)
+                    );
+                    
+                    // Activar si cambió progress O campos reales
+                    if (fieldsChanged) {
+                        const states = JSON.parse(sessionStorage.getItem('updateStates') || '{}');
+                        if (!states.tasks) states.tasks = {};
+                        states.tasks.needsUpdate = true;
+                        sessionStorage.setItem('updateStates', JSON.stringify(states));
+                    }
+                }
+            });
+
+            /**
+             * Orquestador global
+             */
+            async function runProjectRecalculation() {
+                // Leer estado de actualización
+                const states = JSON.parse(sessionStorage.getItem('updateStates') || '{}');
+                if (!states.tasks?.needsUpdate) return;
+
+                // Obtener instancia activa del CRUD (para orden y renderizado)
+                const readInstance = window.app.CRUD._readInstances.get(zContainer);
+                if (!readInstance) return;
+
+                // Recargar TODAS las tareas desde BD (datos frescos)
+                const allTasks = await db.getByIndex(tableName, { 
+                    key: 'projectId', 
+                    value: project.id 
+                });
+
+                // DECISIÓN: ¿Alguna tarea está 100% completa con datos reales?
+                const hasCompletedTasksWithActuals = allTasks.some(task => 
+                    task.progress === 100 && (task.actualDuration > 0 || task.typeId === 2)
+                );
+
+                // CONDICIONAL: Ejecutar CPM solo si aplica
+                if (hasCompletedTasksWithActuals) {
+                    // Limpiar residuos CPM
+                    allTasks.forEach(task => {
+                        delete task.earlyStart;
+                        delete task.earlyFinish;
+                        delete task.lateStart;
+                        delete task.lateFinish;
+                        delete task.totalSlack;
+                        delete task.freeSlack;
+                    });
+
+                    // CPM UNA SOLA VEZ
+                    const cpm = new window.app.CPM(project, allTasks, {
+                        normalize: true,
+                        calculateFreeSlack: true,
+                        restore: true,
+                        projectStartDate: new Date(project.startDate)
+                    });
+
+                    const cpmTasks = cpm.calculate();
+                    
+                    // Persistir
+                    await Promise.all(cpmTasks.map(task => db.update(tableName, task)));
+                }
+
+                // COMÚN: Siempre actualizar benchmark/status
+                await window.updateTasks(project);
+
+                // COMÚN: Siempre recargar y renderizar
+                const updatedTasks = await db.getByIndex(tableName, { 
+                    key: 'projectId', 
+                    value: project.id 
+                });
+                
+                // Preservar orden jerárquico original de la UI
+                const originalOrder = readInstance.config.data.map(t => t.id);
+                const tasksMap = new Map(updatedTasks.map(t => [t.id, t]));
+                const orderedTasks = originalOrder.map(id => tasksMap.get(id)).filter(Boolean);
+
+                // Refrescar UI con datos recalculados en el orden original
+                readInstance.config.data = orderedTasks;
+                readInstance.render();
+                window.app.CRUD.reconfigure();
+
+                // COMÚN: Siempre resetear flag
+                states.tasks.needsUpdate = false;
+                sessionStorage.setItem('updateStates', JSON.stringify(states));
+            }
+
+            await runProjectRecalculation();
+            
+            // Escuchar evento de actualización completada
+            zContainer.addEventListener('drawer:close', async () => {
+                await runProjectRecalculation();
+            });
+
+            /**
+            * Formularios
+            */
+            zDrawerBody.innerHTML = `<z-tab>
+                <tab-head>
+                    <tab-head-item role="link" href="#general">General</tab-head-item>
+                    <tab-head-item role="link" href="#resources">Recursos</tab-head-item>
+                </tab-head>
+                <tab-body>
+                    <tab-body-item id="general">
+                        <fieldset>
+                            <legend>Identificación</legend>
+                            <form-group>
+                                <label>Tipo</label>
+                                <select name="typeId" disabled>
+                                    ${window.buildOptions(typesMap)}
+                                </select>
+                            </form-group>
+                            <form-group>
+                                <label>Nivel de esquema</label>
+                                <input name="level" type="number" min="0" max="99" disabled>
+                            </form-group>
+                            <form-group>
+                                <label>Código</label>
+                                <input name="code" type="text" maxlength="16" style="width: 8rem;">
+                            </form-group>
+                            <form-group>
+                                <label>Nombre</label>
+                                <input name="name" type="text">
+                            </form-group>
+                            <form-group>
+                                <label>Descripción</label>
+                                <textarea name="description" rows="3"></textarea>
+                            </form-group>
+                            <form-group>
+                                <label>Estado</label>
+                                <select name="statusId" disabled>
+                                    ${window.buildOptions(statusMap)}
+                                </select>
+                            </form-group>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Tareas predecesoras</legend>
+                            </z-actionbar>
+                            <table class="table-sticky">
+                                <thead>
+                                    <tr>
+                                        <th>Tarea</th>
+                                        <th width="96">Relación</th>
+                                        <th width="96">Desfase</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="records-list"></tbody>
+                            </table>
+                            <input type="hidden" name="dependencies" data-saveas="object" value="">
+                        </fieldset>
+                        <fieldset>
+                            <legend>Probabilidad</legend>
+                            <form-group>
+                                <label>Duración [días]</label>
+                                <group-set>
+                                    <group-item>
+                                        <label>Optim.</label>
+                                        <input name="optimisticDuration" type="number" min="0" max="99999">
+                                    </group-item>
+                                    <group-item>
+                                        <label>Prob.</label>
+                                        <input name="likelyDuration" type="number" min="0" max="99999">
+                                    </group-item>
+                                    <group-item>
+                                        <label>Pesim.</label>
+                                        <input name="pessimisticDuration" type="number" min="0" max="99999">
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Distribución</label>
+                                <select name="distributionId" required>
+                                    ${distributionsOptions}
+                                </select>
+                            </form-group>
+                        </fieldset>
+                    </tab-body-item>
+                    <tab-body-item id="resources">
+                        <fieldset>
+                            <legend>Real</legend>
+                            <form-group>
+                                <label>Avance</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="progress" type="number" min="0" max="100" step="0.01">
+                                        <label>%</label>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Fechas</label>
+                                <group-set>
+                                    <group-item>
+                                        <label>Comienzo</label>
+                                        <input name="actualStartDate" type="datetime-local">
+                                    </group-item>
+                                    <group-item>
+                                        <label>Fin</label>
+                                        <input name="actualFinishDate" type="datetime-local">
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Duración</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="actualDuration" type="number" min="0" max="9999">
+                                        días
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Trabajo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="actualWork" type="number" min="0" max="999999999">
+                                        horas
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Costo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="actualCost" type="number" min="0" max="999999999999">
+                                        ${project.currencyCode}
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Plan</legend>
+                            <form-group>
+                                <label>Fechas</label>
+                                <group-set>
+                                    <group-item>
+                                        <label>Comienzo</label>
+                                        <input name="startDate" type="datetime-local">
+                                    </group-item>
+                                    <group-item>
+                                        <label>Fin</label>
+                                        <input name="finishDate" type="datetime-local">
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Duración</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="duration" type="number" min="0" max="9999">
+                                        días
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Trabajo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="work" type="number" min="0" max="999999999">
+                                        horas
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Costo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="cost" type="number" min="0" max="999999999999">
+                                        ${project.currencyCode}
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Línea Base</legend>
+                            <form-group>
+                                <label>Fechas</label>
+                                <group-set>
+                                    <group-item>
+                                        <label>Comienzo</label>
+                                        <input name="baselineStartDate" type="datetime-local" disabled>
+                                    </group-item>
+                                    <group-item>
+                                        <label>Fin</label>
+                                        <input name="baselineFinishDate" type="datetime-local" disabled>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Duración</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="baselineDuration" type="number" min="0" max="9999" disabled>
+                                        días
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Trabajo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="baselineWork" type="number" min="0" max="999999999" disabled>
+                                        horas
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Costo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="baselineCost" type="number" min="0" max="999999999999" disabled>
+                                        ${project.currencyCode}
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                        </fieldset>
+                    </tab-body-item>
+                </tab-body>
+            </z-tab>`;
+
+            /**
+            * Gestiona dependencias
+            */
+            let recordsManager = null;
+            
+            zContainer.addEventListener('crud:update:load:complete', (event) => {
+                const { record } = event.detail;
+                
+                if (recordsManager) {
+                    recordsManager.destroy();
+                    recordsManager = null;
+                }
+                
+                recordsManager = new window.app.ArrayManager({
+                    mode: 'read',
+                    fieldName: 'dependencies',
+                    fields: [
+                        {
+                            name: 'taskId',
+                            type: 'select'
+                        },
+                        {
+                            name: 'relationId',
+                            type: 'select'
+                        },
+                        {
+                            name: 'lag',
+                            type: 'number'
+                        }
+                    ],
+                    formatters: {
+                        taskId: (value) => tasksMap.get(value) || value,
+                        relationId: (value) => relationsMap.get(value) || value
+                    }
+                });
+                
+                recordsManager.init(record.dependencies || []);
+            });
+
+            /**
+            * Carga de archivo
+            */
+            const loadButton = document.getElementById('xlsx-file');
+            if (tasks.length > 0) {
+                loadButton.remove();
+            } else {
+                const tasksLast = await db.getAll(tableName, true);
+
+                const sheetloader = new window.app.SheetLoader({
+                    mode: 'project',
+                    defaults: {
+                        projectId: project.id,
+                        currencyId: project.currencyId,
+                        offset: tasksLast === null ? 0 : tasksLast.id
+                    }
+                });
+
+                sheetloader.render(loadButton, async (upload) => {
+                    try {
+                        await db.update('projects', {
+                            ...project,
+                            ...upload.project
+                        });
+                        await db.bulkAdd(tableName, upload.tasks);
+
+                        // Marcar que project y tasks necesitan actualización
+                        const states = JSON.parse(sessionStorage.getItem('updateStates') || '{}');
+                        if (!states.project) states.project = {};
+                        if (!states.tasks) states.tasks = {};
+                        states.project.needsUpdate = true;
+                        states.tasks.needsUpdate = true;
+                        sessionStorage.setItem('updateStates', JSON.stringify(states));
+                    } catch (error) {
+                        console.error('Error al insertar tareas:', error);
+                    } finally {
+                        window.location.reload();
+                    }
+                });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

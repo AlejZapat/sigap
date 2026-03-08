@@ -1,0 +1,335 @@
+<h1>Proyectos</h1>
+
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input aria-label="search" placeholder="Buscar" type="search">
+            <span aria-label="results"></span>
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" aria-label="new" data-icon="add" data-modal-target="new-project">Agregar</button>
+        </actionbar-item>
+    </z-actionbar>
+
+    <table class="table-sticky">
+        <thead>
+            <tr>
+                <th width="120">Código</th>
+                <th>Nombre</th>
+                <th width="160">Tipo</th>
+                <th width="128">Avance</th>
+                <th width="128">Estado</th>
+                <th width="108">Acciones</th>
+            </tr>
+        </thead>
+        <tbody><!-- Contendido --></tbody>
+    </table>
+
+    <dialog data-id="new-project">
+        <button aria-label="close"></button>
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-refresh="true">
+            <panel-head>
+                <panel-title>
+                    Nuevo Proyecto
+                </panel-title>
+            </panel-head>
+            <panel-body><!-- Contenido --></panel-body>
+            <panel-foot>
+                <button type="submit">Crear</button>
+            </panel-foot>
+        </form>
+    </dialog>
+
+    <z-drawer data-id="edit-project" aria-orientation="right">
+        <form method="post" autocomplete="off" role="form" enctype="multipart/form-data" data-auth="1">
+            <panel-head>
+                <panel-title>
+                    Editar Proyecto
+                </panel-title>
+            </panel-head>
+            <panel-body><!-- Contendido --></panel-body>
+            <panel-foot>
+                <button type="submit">Actualizar</button>
+            </panel-foot>
+        </form>
+    </z-drawer>
+
+</z-container>
+
+
+<script>
+    (async function() {
+        // Obtener contenedores principales
+        const zContainer = document.querySelector('z-container');
+        const zModalBody = zContainer.querySelector('dialog[data-id="new-project"] panel-body');
+        const zDrawerBody = zContainer.querySelector('z-drawer[data-id="edit-project"] panel-body');
+
+        try {
+            // Obtener el objeto IndexedDB
+            const db = window.app?.db;
+
+            // Obtener los tipos de proyecto
+            const types = await db.getAll('z-system_project_types');
+            const typesMap = Object.fromEntries(types.map(r => [r.id, r.name]));
+
+            // Obtener los sistemas de proyecto
+            const trackingBasis = await db.getAll('z-system_project_tracking_basis');
+            const trackingBasisMap = Object.fromEntries(trackingBasis.map(r => [r.id, r.name]));
+  
+            // Obtener las monedas de proyecto
+            const currencies = await db.getAll('z-system_currencies');
+            const currenciesMap = Object.fromEntries(currencies.map(r => [r.id, r.name]));
+
+            // Obtener los estados de proyecto
+            const status = await db.getAll('z-system_project_status');
+            const statusMap = Object.fromEntries(status.map(r => [r.id, `<z-badge data-type="${r.badge}">${r.name}</z-badge>`]));
+
+            // Definir variables principales
+            const tableName = 'projects';
+            const fields = ['code', 'name', 'typeId', 'progress', 'statusId'];
+            const detailUrl = `${window.location.search}&pid`;
+            
+            // Obtener todos los proyectos
+            const projects = await db.getAll(tableName);
+
+            // Leer y Mostrar la tabla
+            await window.app.CRUD.read(zContainer, {
+                dataset: { 
+                    table: tableName,
+                    show: fields.join(','), 
+                    uri: detailUrl 
+                },
+                fields: fields,
+                data: projects,
+                mappers: {
+                    typeId: typesMap,
+                    statusId: statusMap
+                },
+                actions: {
+                    create: { auth: 1 },
+                    read: { auth: 1, url: detailUrl, suffix: '&view=integration' },
+                    edit: { auth: 1, target: 'edit-project' },
+                    delete: { auth: 1 }
+                },
+                onCreate: async (form, recordData) => {
+                    recordData.level = 0;
+                    recordData.duration = 0;
+                    recordData.work = 0;
+                    recordData.cost = 0;
+                    recordData.trackingBasisId = 1;
+                    recordData.isDiscrete = 1;
+                    recordData.statusId = 1;       
+                },
+                onUpdate: (form, fullRecord, changedFields) => {
+                    // Marcar que se necesita actualizar project
+                    const states = JSON.parse(sessionStorage.getItem('updateStates') || '{}');
+                    if (!states.project) states.project = {};
+                    states.project.needsUpdate = true;
+                    sessionStorage.setItem('updateStates', JSON.stringify(states));
+                }
+            });
+
+            // Configurar los elementos comunes de "general"
+            const formCommon = [
+                `<form-group>
+                    <label>Tipo</label>
+                    <select name="typeId" required>
+                        ${window.buildOptions(typesMap, {default: 1})}
+                    </select>
+                </form-group>`,
+                `<form-group>
+                    <label>Código</label>
+                    <input name="code" type="text" maxlength="8" style="width: 8rem;" onchange="this.value=this.value.toUpperCase();">
+                </form-group>`,
+                `<form-group>
+                    <label>Nombre</label>
+                    <input name="name" type="text" maxlength="64" required>
+                </form-group>`,
+                `<form-group>
+                    <label>Descripción</label>
+                    <textarea name="description" rows="4"></textarea>
+                </form-group>`,
+                `<form-group>
+                    <label>Moneda</label>
+                    <select name="currencyId" required>
+                        ${window.buildOptions(currenciesMap, {default: 149})}
+                    </select>
+                </form-group>`,
+            ];
+
+            const formUpdate = [
+                `<form-group>
+                    <label>Probabilidad discreta</label>
+                    <input name="isDiscrete" type="checkbox" role="switch">
+                </form-group>`,
+                `<form-group>
+                    <label>Base de avance</label>
+                    <select name="trackingBasisId">
+                        ${window.buildOptions(trackingBasisMap)}
+                    </select>
+                </form-group>`,
+                `<form-group>
+                    <label>Estado</label>
+                    <select name="statusId" disabled>
+                        ${status.map(r => `<option value="${r.id}">${r.name}</option>`).join('')}
+                    </select>
+                </form-group>`
+            ];
+
+            // Mostrar el modal para creación
+            zModalBody.innerHTML = formCommon.join('');
+            
+            // Mostrar el drawer para edición
+            zDrawerBody.innerHTML = `<z-tab>
+                <tab-head>
+                    <tab-head-item role="link" href="#general">General</tab-head-item>
+                    <tab-head-item role="link" href="#details">Detalles</tab-head-item>
+                </tab-head>
+                <tab-body>
+                    <tab-body-item id="general">
+                        ${[...formCommon, ...formUpdate].join('')}
+                    </tab-body-item>
+                    <tab-body-item id="details">
+                        <fieldset>
+                            <legend>Real</legend>
+                            <form-group>
+                                <label>Avance</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="progress" type="number" min="0" max="100" step="0.01" disabled>
+                                        <label>%</label>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Fechas</label>
+                                <group-set>
+                                    <group-item>
+                                        <label>Comienzo</label>
+                                        <input name="actualStartDate" type="datetime-local" disabled>
+                                    </group-item>
+                                    <group-item>
+                                        <label>Fin</label>
+                                        <input name="actualFinishDate" type="datetime-local" disabled>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Duración</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="actualDuration" type="number" min="0" max="9999" disabled>
+                                        días
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Trabajo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="actualWork" type="number" min="0" max="999999999" disabled>
+                                        horas
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Costo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="actualCost" type="number" min="0" max="999999999999" disabled>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Plan</legend>
+                            <form-group>
+                                <label>Fechas</label>
+                                <group-set>
+                                    <group-item>
+                                        <label>Comienzo</label>
+                                        <input name="startDate" type="datetime-local" disabled>
+                                    </group-item>
+                                    <group-item>
+                                        <label>Fin</label>
+                                        <input name="finishDate" type="datetime-local" disabled>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Duración</label>
+                                 <group-set>
+                                    <group-item>
+                                        <input name="duration" type="number" min="0" max="9999" disabled>
+                                        días
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Trabajo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="work" type="number" min="0" max="999999999" disabled>
+                                        horas
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Costo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="cost" type="number" min="0" max="999999999999" disabled>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Línea Base</legend>
+                            <form-group>
+                                <label>Fechas</label>
+                                <group-set>
+                                    <group-item>
+                                        <label>Comienzo</label>
+                                        <input name="baselineStartDate" type="datetime-local" disabled>
+                                    </group-item>
+                                    <group-item>
+                                        <label>Fin</label>
+                                        <input name="baselineFinishDate" type="datetime-local" disabled>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Duración</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="baselineDuration" type="number" min="0" max="9999" disabled>
+                                        días
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Trabajo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="baselineWork" type="number" min="0" max="999999999" disabled>
+                                        horas
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                            <form-group>
+                                <label>Costo</label>
+                                <group-set>
+                                    <group-item>
+                                        <input name="baselineCost" type="number" min="0" max="999999999999" disabled>
+                                    </group-item>
+                                </group-set>
+                            </form-group>
+                        </fieldset>
+                    </tab-body-item>
+                </tab-body>
+            </z-tab>`;
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>

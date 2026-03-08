@@ -1,0 +1,243 @@
+<h1>Estado del Proyecto</h1>
+
+<z-container>
+    <z-actionbar>
+        <actionbar-item>
+            <input id="xlsx-file" type="file" accept=".xlsx,.xls" data-icon="upload" />
+        </actionbar-item>
+        <actionbar-item>
+            <button class="borderless" type="button" data-drawer-target="info" data-icon="info" title="Información"></button>
+        </actionbar-item>
+    </z-actionbar>
+</z-container>
+
+<z-diagram id="project-summary">
+
+    <z-actionbar>
+        <actionbar-item>
+            <form-group aria-orientation="inline">
+                <group-set>
+                    <group-item>
+                        <label for="status-date">Fecha de estado</label>
+                        <input id="status-date" type="date">
+                    </group-item>
+                    <group-item>
+                        <label for="show-ranges">Rangos</label>
+                        <input id="show-ranges" type="checkbox" role="switch">
+                    </group-item>
+                </group-set>
+            </form-group>
+        </actionbar-item>
+        <actionbar-item>
+            <form-group aria-orientation="inline">
+                <group-set>
+                    <group-item>
+                        <label for="tracking-basis-id">Base Cálculo</label>
+                        <select id="tracking-basis-id"></select>
+                    </group-item>
+                    <group-item>
+                        <label for="time-scale">Escala de tiempo</label>
+                        <select id="time-scale"></select>
+                    </group-item>
+                </group-set>
+            </form-group>
+        </actionbar-item>
+    </z-actionbar>
+
+    <diagram-content>
+        <z-grid>
+            <grid-item class="col-2 col-lg-12">
+                <z-grid>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="performance-index">
+                                    <panel-suptitle>Desempleño</panel-suptitle>
+                                    <panel-title>0%</panel-title>
+                                    <panel-subtitle>Real/Línea Base</panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-duration">
+                                    <panel-suptitle>Duración Línea Base</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle>días</panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-cost">
+                                    <panel-suptitle>Costo Línea Base</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle data-label="currency"></panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-work">
+                                    <panel-suptitle>Trabajo Línea Base</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                    <panel-subtitle>horas</panel-subtitle>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-tasks">
+                                    <panel-suptitle>Tareas</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-12 col-lg-4">
+                        <z-card data-type="stat">
+                            <card-content aria-label="title">
+                                <panel-head id="project-milestones">
+                                    <panel-suptitle>Hitos</panel-suptitle>
+                                    <panel-title>0</panel-title>
+                                </panel-head>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                </z-grid>
+            </grid-item>
+            <grid-item class="col-10 col-lg-12">
+                <z-grid>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Curva de Avance</h6>
+                            </card-title>
+                            <card-content id="progress-curve" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Avance por Periodo</h6>
+                            </card-title>
+                            <card-content id="progress-by-period" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Tareas por estado</h6>
+                            </card-title>
+                            <card-content id="tasks-by-status" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                    <grid-item class="col-6 col-lg-12">
+                        <z-card>
+                            <card-title aria-label="title">
+                                <h6 class="m-0">Análisis de Tendencia de Hitos (MTA)</h6>
+                            </card-title>
+                            <card-content id="mta" style="min-height: 323px;">
+                                <p>No hay datos para mostrar.</p>
+                            </card-content>
+                        </z-card>
+                    </grid-item>
+                </z-grid>
+            </grid-item>
+        </z-grid>
+    </diagram-content>
+</z-diagram>
+
+<script>
+    const statusDate = document.querySelector('#status-date');
+    const currencies = document.querySelectorAll('[data-label="currency"]');
+
+    (async function() {
+        try {
+            const sheetloader = new window.app.SheetLoader({ mode: 'project' });
+            sheetloader.render(document.getElementById('xlsx-file'), async (upload) => {
+                try {
+                    const charts = new window.app.Charts({
+                        project: upload.project,
+                        tasks: upload.tasks,
+                        controls: {
+                            'status-date': new Date(),
+                            'show-ranges': false,
+                            'tracking-basis-id': {
+                                1: 'Tiempo',
+                                2: 'Costo',
+                                3: 'Trabajo'
+                            },
+                            'time-scale': {
+                                days: 'Días',
+                                weeks: 'Semanas',
+                                months: 'Meses',
+                                quarters: 'Trimestres'
+                            }
+                        },
+                        mappers: {
+                            status: [
+                                {
+                                    id: 1,
+                                    name: "Futura",
+                                    color: "#c0c0c0",
+                                    badge: "neutral",
+                                    isActive: 1
+                                },
+                                {
+                                    id: 2,
+                                    name: "A tiempo",
+                                    color: "#1e90ff",
+                                    badge: "info",
+                                    isActive: 1
+                                },
+                                {
+                                    id: 3,
+                                    name: "Retrasada",
+                                    color: "#f2a202",
+                                    badge: "warning",
+                                    isActive: 1
+                                },
+                                {
+                                    id: 4,
+                                    name: "Vencida",
+                                    color: "#fd1d0d",
+                                    badge: "danger",
+                                    isActive: 1
+                                },
+                                {
+                                    id: 5,
+                                    name: "Completada",
+                                    color: "#217901",
+                                    badge: "success-inverted",
+                                    isActive: 1
+                                }
+                            ]
+                        }
+                    });
+                    
+                    charts.dashboardSummary('#project-summary'); 
+
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+</script>
